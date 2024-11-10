@@ -45,28 +45,42 @@ class TimeEntryRepositoryYaml(TimeEntryRepository):
                 return TimeEntry(**entry)
         raise KeyError("record id not found")
 
+    @staticmethod
+    def _project_matching(filter_projects: set[str], project: str) -> bool:
+        for f_proj in filter_projects:
+            if (
+                f_proj[-1] in "*+." and project.startswith(f_proj[0:-1])
+            ) or f_proj == project:
+                return True
+        return False
+
+    def _check_against_filter(self, filter: EntryListFilter, entry: TimeEntry) -> bool:
+        conditions = [
+            # id filter
+            (not filter.id or entry.id.startswith(filter.id)),
+            # Project filters
+            (
+                not filter.projects
+                or self._project_matching(filter.projects, entry.project)
+            ),
+            # Date filters
+            (not filter.start_date or entry.start_time.date() >= filter.start_date),
+            (
+                not filter.end_date
+                or (entry.end_time and entry.end_time.date() <= filter.end_date)
+            ),
+            # Tag filter
+            (not filter.tags or any(tag in entry.tags for tag in filter.tags)),
+        ]
+        return all(conditions)
+
     def filter(self, *, filter: EntryListFilter | None = None) -> list[TimeEntry]:
-        # QUESTION: are multiple fields in a filter an AND or an OR?
         time_entries = self.get_all()
         if filter is None:
             return time_entries
-        filtered_entries = []
-        for entry in time_entries:
-            if filter.project and filter.project == entry.project:
-                filtered_entries.append(entry)
-            elif filter.project__starts_with and entry.project.startswith(
-                filter.project__starts_with
-            ):
-                filtered_entries.append(entry)
-            elif filter.start_date and entry.start_time.date() >= filter.start_date:
-                filtered_entries.append(entry)
-            elif (
-                filter.end_date
-                and entry.end_time
-                and entry.end_time.date() <= filter.end_date
-            ):
-                filtered_entries.append(entry)
-        return filtered_entries
+        return [
+            entry for entry in time_entries if self._check_against_filter(filter, entry)
+        ]
 
     def save(self, entry: TimeEntry) -> None:
         data = self._load_data()

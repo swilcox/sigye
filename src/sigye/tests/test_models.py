@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from ..models import TimeEntry
+from ..models import TimeEntry, EntryListFilter
 
 
 def test_time_entry():
@@ -54,3 +54,43 @@ def test_duration():
         tags=["testtag2"],
     )
     assert t2.duration == t2.end_time - t2.start_time
+
+
+def test_entry_list_filter_time_period_today():
+    now = datetime.now()
+    filter = EntryListFilter(time_period="today")
+    assert filter.start_date == now.date()
+    assert filter.end_date is None
+
+
+def test_entry_list_filter_time_period_week():
+    now = datetime.now()
+    filter = EntryListFilter(time_period="week")
+    assert filter.start_date == now.date() - timedelta(days=now.date().weekday())
+    assert filter.end_date is None
+
+
+def test_entry_list_filter_time_period_month():
+    now = datetime.now()
+    filter = EntryListFilter(time_period="month")
+    assert filter.start_date == now.date() - timedelta(days=(now.date().day - 1))
+    assert filter.end_date is None
+
+
+def test_entry_list_filter_projects():
+    filter = EntryListFilter(projects={"project1", "project2"})
+    assert len(filter.projects) == 2
+    assert "project1" in filter.projects
+    assert "project2" in filter.projects
+
+
+def test_entry_list_filter_tags():
+    filter = EntryListFilter(tags={"tag1", "tag2"})
+    assert len(filter.tags) == 2
+    assert "tag1" in filter.tags
+    assert "tag2" in filter.tags
+
+
+def test_entry_list_filter_format():
+    filter = EntryListFilter(output_format="json")
+    assert filter.output_format == "json"

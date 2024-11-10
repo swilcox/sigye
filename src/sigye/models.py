@@ -1,5 +1,6 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from uuid import uuid4
+from typing import Literal
 
 from pydantic import BaseModel, Field
 import humanize
@@ -58,8 +59,29 @@ class TimeEntry(BaseModel):
 
 
 class EntryListFilter(BaseModel):
-    project: str | None = None
-    project__starts_with: str | None = None
+    id: str = ""
+    projects: set[str] = Field(default_factory=set)
     start_date: date | None = None
     end_date: date | None = None
-    tags: set[str] | None = None
+    tags: set[str] = Field(default_factory=set)
+    time_period: Literal["today", "week", "month"] | None = None
+    output_format: str | None = None
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.time_period:
+            self._apply_time_period()
+
+    def _apply_time_period(self):
+        """Apply date filters based on time period"""
+        now = datetime.now()
+        if self.time_period == "today":
+            self.start_date = now.date()
+        elif self.time_period == "week":
+            self.start_date = now.date() - timedelta(
+                days=now.date().weekday()
+            )  # Monday
+        elif self.time_period == "month":
+            self.start_date = now.date() - timedelta(
+                days=(now.date().day - 1)
+            )  # 1st of current month

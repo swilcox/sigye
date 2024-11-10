@@ -12,7 +12,7 @@ class TimeTrackingService:
         self,
         project: str,
         start_time: datetime | None = None,
-        comment: str = None,
+        comment: str = "",
         tags: set[str] = None,
     ) -> TimeEntry:
         # Stop any active entry first
@@ -23,7 +23,10 @@ class TimeTrackingService:
 
         # Create and save new entry
         new_entry = TimeEntry(
-            project=project, start_time=start_time or datetime.now().astimezone()
+            project=project,
+            start_time=start_time or datetime.now().astimezone(),
+            comment=comment,
+            tags=tags or set(),
         )
         self.repository.save(new_entry)
         return new_entry
@@ -46,6 +49,13 @@ class TimeTrackingService:
 
     def get_entry(self, id: str) -> TimeEntry:
         return self.repository.get_entry_by_id(id)
+
+    def update_entry(self, entry: TimeEntry) -> TimeEntry:
+        """Update an existing time entry"""
+        # Verify the entry exists first
+        self.get_entry(entry.id)
+        self.repository.save(entry)
+        return entry
 
 
 # start
