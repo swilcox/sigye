@@ -30,6 +30,16 @@ pipx install sigye
 
 ## Usage
 
+### Default Storage of Entries
+By default, entries are stored in a YAML file at: `$HOME/.sigye/time_entries.yml`
+
+To override this value, you can add `--filename <date_filename>` on every command to override adhoc.
+
+To override this value for a environment, you can set the environment variable `SIGYE_DATA_FILENAME` to whatever value you'd like and that will become the default.
+
+> [!IMPORTANT]  
+> Make sure the directory exists before overriding.
+
 ### Start tracking
 ```shell
 sigye start <project-name> "<optional comment>" --tag "optional_tag"

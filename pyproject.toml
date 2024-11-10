@@ -1,13 +1,15 @@
 [project]
 name = "sigye"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.2.0"
+description = "(시계) A simple command-line program for tracking time."
 readme = "README.md"
-authors = [{ name = "swilcox", email = "steven@wilcoxzone.com" }]
+license = { text = "MIT License" }
+authors = [{ name = "swilcox", email = "steven@wilcox.be" }]
 requires-python = ">=3.12"
 dependencies = [
     "click>=8.1.7",
     "humanize>=4.11.0",
+    "pydantic-settings>=2.6.1",
     "pydantic>=2.9.2",
     "pyyaml>=6.0.2",
     "rich>=13.9.4",
@@ -21,8 +23,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = [
-    "freezegun>=1.5.1",
-    "pytest-cov>=6.0.0",
-    "pytest>=8.3.3",
-]
+dev = ["freezegun>=1.5.1", "pytest-cov>=6.0.0", "pytest>=8.3.3"]

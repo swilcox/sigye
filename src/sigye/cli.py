@@ -7,11 +7,15 @@ import yaml
 
 import click
 
+from .config.settings import Settings
 from .models import EntryListFilter, TimeEntry
 from .output.text_output import list_output, single_entry_output
 from .services import TimeTrackingService
 from .repositories.time_entry_repo import TimeEntryRepository
 from .repositories.time_entry_repo_yaml import TimeEntryRepositoryYaml
+
+
+DEFAULT_SETTINGS = Settings()
 
 
 def _get_repo_from_filename(filename: str) -> TimeEntryRepository:
@@ -20,7 +24,9 @@ def _get_repo_from_filename(filename: str) -> TimeEntryRepository:
 
 
 def config_params(func):
-    @click.option("--filename", "-f", default="time_entries.yaml")
+    @click.option(
+        "--filename", "-f", default=DEFAULT_SETTINGS.data_filename, show_default=True
+    )
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
