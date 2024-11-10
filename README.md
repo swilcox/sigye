@@ -4,7 +4,7 @@ A simple, command-line time tracking program.
 
 ## Overview
 
-sigye (시계 Korean for hour(s)/time) is a CLI program to help you track your time. With sigye, there are basic operations:
+sigye (시계 Korean for clock) is a CLI program to help you track your time. With sigye, there are basic operations:
 * start (start tracking time towards a project)
 * stop (stop tracking time)
 * status (get the current status)
