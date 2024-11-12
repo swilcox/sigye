@@ -88,6 +88,15 @@ To edit an entry, use the full or partial ID (just has to be enough digits for i
 sigye edit ID
 ```
 
+### Localization Support (experimental Korean output)
+To get *output* in Korean:
+`export SIGYE_LOCALE=ko_KR`
+
+The `sigye list` and `sigye status` commands will output some information in Korean.
+
+> [!NOTE]
+> This work is ongoing and subject to change.
+
 ## Development
 
 ### Install requirements
@@ -105,6 +114,6 @@ uv run pytest
 * Configuration file support
   * YAML
   * TOML
-* Language Localization
+* Language Localization (in-progress)
 * SQLite storage
 * TOML storage
