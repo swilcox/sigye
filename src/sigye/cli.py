@@ -1,11 +1,13 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import functools
 import tempfile
 import os
 import subprocess
+import humanize.i18n
 import yaml
 
 import click
+import humanize
 
 from .config.settings import Settings
 from .models import EntryListFilter, TimeEntry
@@ -13,9 +15,13 @@ from .output.text_output import list_output, single_entry_output
 from .services import TimeTrackingService
 from .repositories.time_entry_repo import TimeEntryRepository
 from .repositories.time_entry_repo_yaml import TimeEntryRepositoryYaml
+from .utils.translation import init_translations
 
 
 DEFAULT_SETTINGS = Settings()
+if DEFAULT_SETTINGS.locale not in ["en", "en_US", "en_GB"]:
+    _ = humanize.i18n.activate(DEFAULT_SETTINGS.locale)
+    _ = init_translations(lang=DEFAULT_SETTINGS.locale)
 
 
 def _get_repo_from_filename(filename: str) -> TimeEntryRepository:

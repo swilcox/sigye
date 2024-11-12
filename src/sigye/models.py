@@ -2,6 +2,7 @@ from datetime import datetime, date, timedelta
 from uuid import uuid4
 from typing import Literal
 
+import humanize.i18n
 from pydantic import BaseModel, Field
 import humanize
 
@@ -21,6 +22,7 @@ class TimeEntry(BaseModel):
             if self.end_time
             else datetime.now().astimezone() - self.start_time
         )
+
         return humanize.precisedelta(
             td,
             suppress=("seconds", "milliseconds", "microseconds"),

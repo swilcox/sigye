@@ -1,0 +1,68 @@
+# Translation from English to Korean
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ko\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: output.py
+msgid "Time Record"
+msgstr "시간 기록"
+
+#: output.py
+msgid "Time Records"
+msgstr "시간 기록"
+
+#: output.py
+msgid "field"
+msgstr "필드 이름"
+
+#: output.py
+msgid "value"
+msgstr "값"
+
+#: output.py
+msgid "id"
+msgstr "아이디"
+
+#: output.py
+msgid "ID"
+msgstr "아이디"
+
+#: output.py
+msgid "start"
+msgstr "시작 시간"
+
+#: output.py
+msgid "start time"
+msgstr "시작 시간"
+
+#: output.py
+msgid "end"
+msgstr "종료 시간"
+
+#: output.py
+msgid "end time"
+msgstr "종료 시간"
+
+#: output.py
+msgid "delta"
+msgstr "지속 시간"
+
+#: output.py
+msgid "duration"
+msgstr "지속 시간"
+
+#: output.py
+msgid "tags"
+msgstr "태그"
+
+#: output.py
+msgid "comments"
+msgstr "댓글"
+
+#: output.py
+msgid "project"
+msgstr "프로젝트"

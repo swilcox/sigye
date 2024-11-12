@@ -99,3 +99,12 @@ This project uses `uv` for dependency management.
 ```shell
 uv run pytest
 ```
+
+## Future Changes
+
+* Configuration file support
+  * YAML
+  * TOML
+* Language Localization
+* SQLite storage
+* TOML storage
