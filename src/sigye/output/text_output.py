@@ -1,9 +1,9 @@
-from datetime import date
+from datetime import date, timedelta
 from rich.console import Console
 from rich.table import Table
 from ..models import TimeEntry
 from ..utils.translation import gettext as _
-
+import humanize
 
 ABBR_ID_LENGTH = 4
 
@@ -33,6 +33,30 @@ def single_entry_output(entry: TimeEntry):
     console.print(table)
 
 
+def _format_delta(td: timedelta) -> str:
+    return humanize.precisedelta(
+        td,
+        suppress=(
+            "years",
+            "months",
+            "days",
+        ),
+        minimum_unit="hours",
+        format="%0.1f",
+    )
+
+
+def _check_and_print_total(table: Table, td: timedelta, description: str, style: str):
+    if td:
+        table.add_row(
+            "",
+            description,
+            "",
+            _format_delta(td),
+            style=style,
+        )
+
+
 def list_output(entry_list: list[TimeEntry]):
     table = Table(title=_("Time Records"))
     table.add_column(_("id"), justify="left", style="#707070")
@@ -43,8 +67,12 @@ def list_output(entry_list: list[TimeEntry]):
     table.add_column(_("comments"), style="blue")
     table.add_column(_("tags"), style="red")
     current_date = date(1970, 1, 1)
+    subtotal_delta = timedelta(0)
+    total_delta = timedelta(0)
     for entry in entry_list:
         if entry.start_time.date() != current_date:
+            _check_and_print_total(table, subtotal_delta, _("subtotal"), "#a0a0a0")
+            subtotal_delta = timedelta(0)
             current_date = entry.start_time.date()
             table.add_section()
             table.add_row("", f"{current_date:%Y-%m-%d}", style="yellow")
@@ -57,5 +85,11 @@ def list_output(entry_list: list[TimeEntry]):
             entry.comment,
             ", ".join(tag for tag in entry.tags),
         )
+        subtotal_delta += entry.duration
+        total_delta += entry.duration
+
+    _check_and_print_total(table, subtotal_delta, _("subtotal"), "#a0a0a0")
+    table.add_section()
+    _check_and_print_total(table, total_delta, _("total"), "yellow")
     console = Console()
     console.print(table)
