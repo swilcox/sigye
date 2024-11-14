@@ -66,3 +66,12 @@ msgstr "댓글"
 #: output.py
 msgid "project"
 msgstr "프로젝트"
+
+msgid "subtotal"
+msgstr "소계"
+
+msgid "total"
+msgstr "총"
+
+msgid "No active time record."
+msgstr "시간 기록 없음."
