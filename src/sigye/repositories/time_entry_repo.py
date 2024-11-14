@@ -26,3 +26,7 @@ class TimeEntryRepository(ABC):
     @abstractmethod
     def get_entry_by_id(self) -> TimeEntry:
         pass
+
+    @abstractmethod
+    def delete_entry(self, id: str) -> TimeEntry:
+        pass

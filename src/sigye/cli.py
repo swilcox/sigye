@@ -84,10 +84,7 @@ def stop(filename):
     """stop tracking work on a project"""
     tts = TimeTrackingService(_get_repo_from_filename(filename))
     time_entry = tts.stop_tracking()
-    if time_entry:
-        single_entry_output(time_entry)
-    else:
-        print("No active time entry to stop.")
+    single_entry_output(time_entry)
 
 
 @cli.command()
@@ -96,10 +93,7 @@ def status(filename):
     """displays currently tracked (if active)"""
     tts = TimeTrackingService(_get_repo_from_filename(filename))
     time_entry = tts.get_active_entry()
-    if time_entry:
-        single_entry_output(time_entry)
-    else:
-        print("No active time entry.")
+    single_entry_output(time_entry)
 
 
 @cli.command()
@@ -145,6 +139,28 @@ def edit(id, filename):
     finally:
         # Clean up temp file
         os.unlink(tmp_path)
+
+
+@cli.command()
+@click.argument("id", required=True, type=str)
+@config_params
+def delete(id, filename):
+    """delete a time entry"""
+    tts = TimeTrackingService(_get_repo_from_filename(filename))
+    # Get the entry to delete
+    try:
+        if entries := tts.list_entries(EntryListFilter(id=id)):
+            if len(entries) > 1:
+                raise IndexError
+            entry = entries[0]
+            entry = tts.delete_entry(entry.id)
+            single_entry_output(entry)
+        else:
+            raise KeyError
+    except KeyError:
+        raise click.ClickException(f"No entry found with id {id}")
+    except IndexError:
+        raise click.ClickException(f"Multiple records found starting with id {id}")
 
 
 @cli.command()

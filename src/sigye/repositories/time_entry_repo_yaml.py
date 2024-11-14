@@ -38,12 +38,26 @@ class TimeEntryRepositoryYaml(TimeEntryRepository):
             if entry["project"] == project
         ]
 
-    def get_entry_by_id(self, id: str):
+    def get_entry_by_id(self, id: str) -> TimeEntry:
         data = self._load_data()
         for entry in data["entries"]:
             if entry["id"] == id:
                 return TimeEntry(**entry)
         raise KeyError("record id not found")
+
+    def delete_entry(self, id: str) -> TimeEntry:
+        data = self._load_data()
+        entries = []
+        found = None
+        for entry in data["entries"]:
+            if entry["id"] == id:
+                found = entry
+            else:
+                entries.append(entry)
+        if not found:
+            raise KeyError("record id not found")
+        self._save_data({"entries": entries})
+        return TimeEntry(**found)
 
     @staticmethod
     def _project_matching(filter_projects: set[str], project: str) -> bool:

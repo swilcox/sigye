@@ -8,7 +8,15 @@ import humanize
 ABBR_ID_LENGTH = 4
 
 
-def single_entry_output(entry: TimeEntry):
+def _no_active_entry():
+    console = Console()
+    console.print("🕛 " + _("No active time record."), style="yellow")
+
+
+def single_entry_output(entry: TimeEntry | None):
+    if entry is None:
+        _no_active_entry()
+        return
     table = Table(title=_("Time Record"))
     table.add_column(_("field"))
     table.add_column(_("value"))

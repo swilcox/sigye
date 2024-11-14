@@ -99,3 +99,19 @@ def test_invalid_entry_fetch(tmp_path):
 
     with pytest.raises(KeyError):
         _ = tts.get_entry("invalid value here!")
+
+
+def test_delete_entry(tmp_path):
+    filename = tmp_path / "test.yaml"
+    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename))
+
+    d1 = tts.start_tracking("test-project")
+    assert d1.end_time is None
+    tts.stop_tracking()
+    d1 = tts.get_entry(d1.id)
+    assert d1.end_time is not None
+
+    tts.delete_entry(d1.id)
+
+    with pytest.raises(KeyError):
+        _ = tts.get_entry(d1.id)

@@ -57,6 +57,9 @@ class TimeTrackingService:
         self.repository.save(entry)
         return entry
 
+    def delete_entry(self, id: str):
+        return self.repository.delete_entry(id)
+
 
 # start
 # stop
