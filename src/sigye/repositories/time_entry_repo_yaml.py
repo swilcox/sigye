@@ -1,5 +1,6 @@
 import os
 import yaml
+from typing import Optional
 from ..models import TimeEntry, EntryListFilter
 from .time_entry_repo import TimeEntryRepository
 
@@ -7,30 +8,39 @@ from .time_entry_repo import TimeEntryRepository
 class TimeEntryRepositoryYaml(TimeEntryRepository):
     def __init__(self, filename: str = "timesheet.yaml"):
         self.filename = filename
+        self._cache = None
         self._ensure_file_exists()
 
     def _ensure_file_exists(self):
         if not os.path.exists(self.filename):
             self._save_data({"entries": []})
 
-    def _load_data(self) -> list[TimeEntry]:
-        with open(self.filename, "r") as f:
-            return yaml.load(f, yaml.FullLoader)
+    def _load_data(self) -> dict:
+        if self._cache is None:
+            with open(self.filename, "r") as f:
+                self._cache = yaml.load(f, yaml.FullLoader)
+        return self._cache
 
     def _save_data(self, data: dict):
         with open(self.filename, "w") as f:
             yaml.dump(data, f)
+        self._cache = data
 
-    def get_active_entry(self) -> TimeEntry | None:
+    def _invalidate_cache(self):
+        self._cache = None
+
+    def get_active_entry(self) -> Optional[TimeEntry]:
         data = self._load_data()
         active = next((e for e in data["entries"] if not e.get("end_time")), None)
         return TimeEntry(**active) if active else None
 
-    def get_all(self):
+    def get_all(self) -> list[TimeEntry]:
         data = self._load_data()
+        # Since entries are maintained in sorted order during save operations,
+        # we don't need to sort here anymore
         return [TimeEntry(**entry) for entry in data["entries"]]
 
-    def get_by_project(self, project):
+    def get_by_project(self, project: str) -> list[TimeEntry]:
         data = self._load_data()
         return [
             TimeEntry(**entry)
@@ -109,5 +119,8 @@ class TimeEntryRepositoryYaml(TimeEntryRepository):
                 entries.append(e)
         if not found:
             entries.append(entry_dict)
+
+        # Sort entries by start_time before saving
+        entries.sort(key=lambda x: x["start_time"])
         data["entries"] = entries
         self._save_data(data)
