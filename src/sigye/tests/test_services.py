@@ -47,6 +47,7 @@ def test_filtered_list(tmp_path):
     tts.stop_tracking()
     d3 = tts.start_tracking("test-project-3", tags={"tag1", "tag3"})
     tts.stop_tracking()
+    assert all(entry is not None for entry in [d1, d2, d3])
 
     # Test no filter
     l1 = tts.list_entries(filter=None)
