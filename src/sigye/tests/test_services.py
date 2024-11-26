@@ -1,14 +1,35 @@
 import pytest
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from ..services import TimeTrackingService
 from ..repositories.time_entry_repo_yaml import TimeEntryRepositoryYaml
 from ..models import EntryListFilter
+from ..config.settings import Settings, AutoTagRule
+
+
+def create_test_settings(tmp_path: Path) -> Settings:
+    """Create test settings with a specific configuration"""
+    settings = Settings(data_filename=str(tmp_path / "test.yaml"), locale="en_US")
+    settings.auto_tag_rules = [
+        AutoTagRule(pattern="^abc", match_type="regex", tags=["learning"]),
+        AutoTagRule(
+            pattern="^PROJ-\\d+", match_type="regex", tags=["work", "billable"]
+        ),
+        AutoTagRule(
+            pattern="(feature|bugfix)/", match_type="regex", tags=["development"]
+        ),
+        AutoTagRule(pattern="-urgent$", match_type="regex", tags=["priority"]),
+    ]
+    return settings
 
 
 def test_basic_time_tracking(tmp_path):
     filename = tmp_path / "test.yaml"
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename))
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(
+        repository=TimeEntryRepositoryYaml(filename), settings=settings
+    )
     assert tts.list_entries() == []
     a = tts.start_tracking("test-project")
     assert a.end_time is None
@@ -24,9 +45,56 @@ def test_basic_time_tracking(tmp_path):
     assert entries[0] == b
 
 
+def test_auto_tagging(tmp_path):
+    filename = tmp_path / "test.yaml"
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(
+        repository=TimeEntryRepositoryYaml(filename), settings=settings
+    )
+
+    # Test regex matching with '^abc' pattern
+    entry1 = tts.start_tracking("abc-learning-task")
+    assert "learning" in entry1.tags
+    tts.stop_tracking()
+
+    # Test regex matching with '^PROJ-\d+' pattern
+    entry2 = tts.start_tracking("PROJ-123")
+    assert "work" in entry2.tags
+    assert "billable" in entry2.tags
+    tts.stop_tracking()
+
+    # Test regex matching with '(feature|bugfix)/' pattern
+    entry3 = tts.start_tracking("feature/new-ui")
+    assert "development" in entry3.tags
+    tts.stop_tracking()
+
+    entry4 = tts.start_tracking("bugfix/issue-123")
+    assert "development" in entry4.tags
+    tts.stop_tracking()
+
+    # Test regex matching with '-urgent$' pattern
+    entry5 = tts.start_tracking("task-urgent")
+    assert "priority" in entry5.tags
+    tts.stop_tracking()
+
+    # Test no auto-tagging for non-matching project
+    entry6 = tts.start_tracking("regular-task")
+    assert len(entry6.tags) == 0
+    tts.stop_tracking()
+
+    # Test merging auto-tags with user-provided tags
+    entry7 = tts.start_tracking("abc-task", tags={"custom-tag"})
+    assert "learning" in entry7.tags
+    assert "custom-tag" in entry7.tags
+    tts.stop_tracking()
+
+
 def test_start_stop(tmp_path):
     filename = tmp_path / "test.yaml"
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename))
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(
+        repository=TimeEntryRepositoryYaml(filename), settings=settings
+    )
 
     d1 = tts.start_tracking("test-project")
     assert d1.end_time is None
@@ -38,7 +106,10 @@ def test_start_stop(tmp_path):
 
 def test_filtered_list(tmp_path):
     filename = tmp_path / "test.yaml"
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename))
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(
+        repository=TimeEntryRepositoryYaml(filename), settings=settings
+    )
 
     # Create entries with different projects and tags
     d1 = tts.start_tracking("test-project", tags={"tag1", "tag2"})
@@ -90,7 +161,10 @@ def test_filtered_list(tmp_path):
 
 def test_invalid_entry_fetch(tmp_path):
     filename = tmp_path / "test.yaml"
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename))
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(
+        repository=TimeEntryRepositoryYaml(filename), settings=settings
+    )
 
     d1 = tts.start_tracking("test-project")
     assert d1.end_time is None
@@ -104,7 +178,10 @@ def test_invalid_entry_fetch(tmp_path):
 
 def test_delete_entry(tmp_path):
     filename = tmp_path / "test.yaml"
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename))
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(
+        repository=TimeEntryRepositoryYaml(filename), settings=settings
+    )
 
     d1 = tts.start_tracking("test-project")
     assert d1.end_time is None
@@ -116,3 +193,32 @@ def test_delete_entry(tmp_path):
 
     with pytest.raises(KeyError):
         _ = tts.get_entry(d1.id)
+
+
+def test_configuration_loading(tmp_path):
+    """Test that configuration is properly loaded and applied"""
+    # Create a config file in the test directory
+    config_file = tmp_path / ".sigye" / "config.yaml"
+    config_file.parent.mkdir(parents=True, exist_ok=True)
+    config_content = f"""
+locale: ko_KR
+data_filename: {str(tmp_path / "test.yaml")}
+auto_tag_rules:
+  - pattern: "^test-"
+    match_type: "regex"
+    tags: ["testing"]
+"""
+    config_file.write_text(config_content)
+
+    # Create settings with the test directory as home
+    settings = Settings.load_from_file(config_file)
+
+    assert settings.locale == "ko_KR"  # Verify locale override
+
+    # Create service and test auto-tagging
+    tts = TimeTrackingService(
+        repository=TimeEntryRepositoryYaml(settings.data_filename), settings=settings
+    )
+
+    entry = tts.start_tracking("test-project")
+    assert "testing" in entry.tags

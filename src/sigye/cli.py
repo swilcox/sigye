@@ -1,27 +1,31 @@
 from datetime import datetime
-import functools
-import tempfile
 import os
-import subprocess
 import humanize.i18n
 import yaml
+from pathlib import Path
 
 import click
 import humanize
 
-from .config.settings import Settings
+from .config.settings import Settings, DEFAULT_CONFIG_PATH
 from .models import EntryListFilter, TimeEntry
 from .output.text_output import list_output, single_entry_output
-from .services import TimeTrackingService
+from .services import TimeTrackingService, EditorServiceError
 from .repositories.time_entry_repo import TimeEntryRepository
 from .repositories.time_entry_repo_yaml import TimeEntryRepositoryYaml
 from .utils.translation import init_translations
 
 
-DEFAULT_SETTINGS = Settings()
-if DEFAULT_SETTINGS.locale not in ["en", "en_US", "en_GB"]:
-    _ = humanize.i18n.activate(DEFAULT_SETTINGS.locale)
-    _ = init_translations(lang=DEFAULT_SETTINGS.locale)
+def load_settings(config_file: Path | None = None) -> Settings:
+    """Load settings from config file, falling back to defaults if needed"""
+    if config_file:
+        settings = Settings.load_from_file(config_file)
+    else:
+        settings = Settings.load_from_file()
+    if settings.locale not in ["en", "en_US", "en_GB"]:
+        _ = humanize.i18n.activate(settings.locale)
+        _ = init_translations(lang=settings.locale)
+    return settings
 
 
 def _get_repo_from_filename(filename: str) -> TimeEntryRepository:
@@ -29,80 +33,73 @@ def _get_repo_from_filename(filename: str) -> TimeEntryRepository:
     return TimeEntryRepositoryYaml(filename)
 
 
-def config_params(func):
-    @click.option(
-        "--filename", "-f", default=DEFAULT_SETTINGS.data_filename, show_default=True
+def _get_service(settings: Settings) -> TimeTrackingService:
+    """Helper to create a TimeTrackingService with repository and settings"""
+    return TimeTrackingService(
+        _get_repo_from_filename(settings.data_filename), settings
     )
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
-def _get_editor_command():
-    return os.environ.get("EDITOR", "vim")
-
-
-def _format_entry_for_edit(entry: TimeEntry) -> str:
-    """Format a time entry as YAML for editing"""
-    # Convert to dict and format as YAML
-    entry_dict = entry.model_dump(mode="json")
-    return yaml.dump(entry_dict)
-
-
-def _parse_edited_entry(content: str) -> TimeEntry:
-    """Parse edited YAML content back into a TimeEntry"""
-    try:
-        data = yaml.safe_load(content)
-        return TimeEntry(**data)
-    except Exception as e:
-        raise click.ClickException(f"Invalid entry format: {str(e)}")
+pass_tts = click.make_pass_decorator(TimeTrackingService, ensure=True)
 
 
 @click.group()
 @click.version_option()
+@click.option(
+    "--config-file",
+    "-c",
+    type=click.Path(path_type=Path),
+    default=DEFAULT_CONFIG_PATH,
+    help="Path to config file",
+    show_default=True,
+)
+@click.option(
+    "--filename",
+    "-f",
+    type=click.Path(path_type=Path),
+    help="Path to data file",
+)
 @click.pass_context
-def cli(ctx): ...
+def cli(ctx, config_file, filename):
+    settings = load_settings(config_file)
+    settings.data_filename = filename or settings.data_filename
+    ctx.obj = _get_service(settings)
 
 
 @cli.command()
 @click.argument("project", required=True, type=str)
-@click.option("--tag", multiple=True)
 @click.argument("comment", required=False, type=str, default="")
-@config_params
-def start(project, tag, comment, filename):
+@click.option("--tag", required=False, type=str, multiple=True)
+@pass_tts
+def start(tts, project, comment, tag):
     """start tracking work on a project"""
-    tts = TimeTrackingService(_get_repo_from_filename(filename))
-    time_entry = tts.start_tracking(project, comment=comment, tags=tag)
+    time_entry = tts.start_tracking(project, comment=comment, tags=set(tag))
     single_entry_output(time_entry)
 
 
 @cli.command()
-@config_params
-def stop(filename):
+@pass_tts
+def stop(tts):
     """stop tracking work on a project"""
-    tts = TimeTrackingService(_get_repo_from_filename(filename))
     time_entry = tts.stop_tracking()
     single_entry_output(time_entry)
 
 
 @cli.command()
-@config_params
-def status(filename):
+@pass_tts
+def status(tts):
     """displays currently tracked (if active)"""
-    tts = TimeTrackingService(_get_repo_from_filename(filename))
     time_entry = tts.get_active_entry()
     single_entry_output(time_entry)
 
 
-@cli.command()
+@cli.command("edit")
 @click.argument("id", required=True, type=str)
-@config_params
-def edit(id, filename):
+@pass_tts
+def edit_entry(tts, id):
     """edit a time entry using the system editor"""
-    tts = TimeTrackingService(_get_repo_from_filename(filename))
 
+    # TODO: replace this with call to service to get entry
     # Get the entry to edit
     try:
         if entries := tts.list_entries(EntryListFilter(id=id)):
@@ -115,38 +112,17 @@ def edit(id, filename):
         raise click.ClickException(f"No entry found with id {id}")
     except IndexError:
         raise click.ClickException(f"Multiple records found starting with id {id}")
-
-    # Create temp file with entry content
-    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as tmp:
-        tmp.write(_format_entry_for_edit(entry))
-        tmp.flush()
-        tmp_path = tmp.name
-
     try:
-        # Open editor
-        editor = _get_editor_command()
-        subprocess.run([editor, tmp_path], check=True)
-
-        # Read and parse edited content
-        with open(tmp_path, "r") as f:
-            edited_content = f.read()
-            updated_entry = _parse_edited_entry(edited_content)
-
-        # Save the updated entry
-        tts.update_entry(updated_entry)
-        single_entry_output(updated_entry)
-
-    finally:
-        # Clean up temp file
-        os.unlink(tmp_path)
+        single_entry_output(tts.edit_entry(entry.id))
+    except EditorServiceError as e:
+        raise click.ClickException(f"Error editing entry: {str(e)}")
 
 
-@cli.command()
+@cli.command("delete")
 @click.argument("id", required=True, type=str)
-@config_params
-def delete(id, filename):
+@pass_tts
+def delete_entry(tts, id):
     """delete a time entry"""
-    tts = TimeTrackingService(_get_repo_from_filename(filename))
     # Get the entry to delete
     try:
         if entries := tts.list_entries(EntryListFilter(id=id)):
@@ -163,7 +139,7 @@ def delete(id, filename):
         raise click.ClickException(f"Multiple records found starting with id {id}")
 
 
-@cli.command()
+@cli.command("list")
 @click.argument(
     "time_period",
     required=False,
@@ -175,11 +151,10 @@ def delete(id, filename):
 @click.option("--tag", multiple=True)
 @click.option("--project", multiple=True)
 @click.option("--format")
-@config_params
-def list(time_period, start_date, end_date, tag, project, format, filename):
+@pass_tts
+def list_entries(tts, time_period, start_date, end_date, tag, project, format):
     """display list of time entries for a time period"""
-    tts = TimeTrackingService(_get_repo_from_filename(filename))
-
+    print(f"time_period: {time_period}")
     filter_params = {}
     if time_period:
         filter_params["time_period"] = time_period

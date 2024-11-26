@@ -17,6 +17,7 @@ dependencies = [
 
 [project.scripts]
 sigye = "sigye.cli:cli"
+sigye2 = "sigye.cli2:cli"
 
 [build-system]
 requires = ["hatchling"]
