@@ -2,10 +2,16 @@ import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from ..services import TimeTrackingService
+from ..services import TimeTrackingService, EditorService, YAMLEditorService
 from ..repositories.time_entry_repo_yaml import TimeEntryRepositoryYaml
 from ..models import EntryListFilter
 from ..config.settings import Settings, AutoTagRule
+
+
+class DummyEditorService(EditorService):
+    def edit_entry(self, entry):
+        entry.comment = "edited by dummy editor"
+        return entry
 
 
 def create_test_settings(tmp_path: Path) -> Settings:
@@ -22,6 +28,16 @@ def create_test_settings(tmp_path: Path) -> Settings:
         AutoTagRule(pattern="-urgent$", match_type="regex", tags=["priority"]),
     ]
     return settings
+
+
+def test_initialization(tmp_path):
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(settings=settings)
+    assert tts.settings == settings
+    assert tts.repository.filename == tts.settings.data_filename
+    assert isinstance(tts.editor, YAMLEditorService)
+    tts = TimeTrackingService(settings=settings, editor=DummyEditorService("nothing"))
+    assert isinstance(tts.editor, DummyEditorService)
 
 
 def test_basic_time_tracking(tmp_path):
@@ -222,3 +238,14 @@ auto_tag_rules:
 
     entry = tts.start_tracking("test-project")
     assert "testing" in entry.tags
+
+
+def test_edit_command(tmp_path):
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(settings=settings, editor=DummyEditorService("nothing"))
+
+    d1 = tts.start_tracking("test-project")
+    assert d1.end_time is None
+    d1 = tts.edit_entry(d1.id)
+    d1 = tts.get_entry(d1.id)
+    assert d1.comment == "edited by dummy editor"

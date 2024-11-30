@@ -29,11 +29,9 @@ class Settings(BaseSettings):
     @classmethod
     def load_from_file(cls, path: Path = DEFAULT_CONFIG_PATH) -> Self:
         if not path.exists():
-            print(f"Config file not found at {path}, using default settings")
             return cls()
         with open(path) as f:
             config_dict = yaml.safe_load(f)
-            print(f"Loaded configuration from {path}")
             return cls.model_validate(config_dict or {})
 
     def apply_auto_tags(self, project: str) -> set[str]:

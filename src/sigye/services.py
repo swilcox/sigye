@@ -6,6 +6,7 @@ import tempfile
 import yaml
 from .models import EntryListFilter, TimeEntry
 from .repositories.time_entry_repo import TimeEntryRepository
+from .repositories.time_entry_repo_yaml import TimeEntryRepositoryYaml
 from .config.settings import Settings
 
 
@@ -65,9 +66,15 @@ class YAMLEditorService(EditorService):
 
 
 class TimeTrackingService:
-    def __init__(self, repository: TimeEntryRepository, settings: Settings):
-        self.repository = repository
+    def __init__(
+        self,
+        settings: Settings,
+        repository: TimeEntryRepository | None = None,
+        editor: EditorService | None = None,
+    ):
         self.settings = settings
+        self.repository = repository or TimeEntryRepositoryYaml(settings.data_filename)
+        self.editor = editor or YAMLEditorService(settings.editor)
 
     def start_tracking(
         self,
@@ -76,10 +83,10 @@ class TimeTrackingService:
         comment: str = "",
         tags: set[str] = None,
     ) -> TimeEntry:
+        start_time = start_time or datetime.now().astimezone()
         # Stop any active entry first
-        active_entry = self.repository.get_active_entry()
-        if active_entry:
-            active_entry.stop()
+        if active_entry := self.repository.get_active_entry():
+            active_entry.stop(end_time=start_time)
             self.repository.save(active_entry)
 
         # Apply auto-tagging rules
@@ -89,7 +96,7 @@ class TimeTrackingService:
         # Create and save new entry
         new_entry = TimeEntry(
             project=project,
-            start_time=start_time or datetime.now().astimezone(),
+            start_time=start_time,
             comment=comment,
             tags=final_tags,
         )
@@ -127,12 +134,13 @@ class TimeTrackingService:
 
     def edit_entry(self, id: str):
         entry = self.get_entry(id)
-        edit_service = YAMLEditorService(self.settings.editor)
-        updated_entry = edit_service.edit_entry(entry)
+        updated_entry = self.editor.edit_entry(entry)
         return self.update_entry(updated_entry)
 
-
-# start
-# stop
-# status
-# list (today, this week, this month, )
+    def get_entry_by_partial_id(self, partial_id: str) -> TimeEntry:
+        entries = self.list_entries(EntryListFilter(id=partial_id))
+        if len(entries) == 1:
+            return entries[0]
+        elif len(entries) > 1:
+            raise IndexError("Multiple entries found")
+        raise KeyError("record id not found")

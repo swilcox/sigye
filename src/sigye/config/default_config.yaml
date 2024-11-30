@@ -1,0 +1,25 @@
+# Default configuration file for sigye
+# Copy this file to ~/.sigye/config.yaml to customize
+
+# Override the default locale (en_US)
+# locale: ko_KR
+
+# Auto-tagging rules
+# Each rule consists of:
+#   - pattern: regular expression pattern to match against project name
+#   - match_type: how to match the pattern (regex)
+#   - tags: list of tags to apply when pattern matches
+auto_tag_rules:
+  - pattern: "^abc"  # Matches projects starting with "abc"
+    match_type: "regex"
+    tags: ["learning"]
+  # Add more rules as needed:
+  # - pattern: "^PROJ-\d+"  # Matches PROJ- followed by numbers
+  #   match_type: "regex"
+  #   tags: ["work", "billable"]
+  # 
+  # Example regex patterns:
+  # - "^bug-.*"           # Projects starting with "bug-"
+  # - ".*-urgent$"        # Projects ending with "-urgent"
+  # - "PROJ-[A-Z]+-\d+"   # e.g. PROJ-ABC-123
+  # - "(feature|bugfix)/" # Projects containing feature/ or bugfix/
