@@ -20,7 +20,7 @@ The default storage of time entries is a YAML file (near future will be sqlite s
 
 ### Via `uv`
 ```shell
-sigye start <project-name> "<optional comment>" --tag "optional_tag" --start_time "HH:MM"
+uv tool install sigye
 ```
 
 ### Via `pipx`
