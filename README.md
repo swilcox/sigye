@@ -20,7 +20,7 @@ The default storage of time entries is a YAML file (near future will be sqlite s
 
 ### Via `uv`
 ```shell
-uv tool install sigye
+sigye start <project-name> "<optional comment>" --tag "optional_tag" --start_time "HH:MM"
 ```
 
 ### Via `pipx`
@@ -42,17 +42,30 @@ To override this value for a environment, you can set the environment variable `
 
 ### Start tracking
 ```shell
-sigye start <project-name> "<optional comment>" --tag "optional_tag"
+sigye start <project-name> "<optional comment>" --tag "optional_tag" --start_time "HH:MM"
 ```
+
+The start command begins tracking time for a project. You can:
+- Add an optional comment in quotes to describe what you're working on
+- Add one or more tags using the --tag option
+- Specify a custom start time using --start_time (or -s) in 24-hour format (HH:MM or HH:MM:SS) or AM/PM format
+- Only one project can be tracked at a time
+- Starting a new project automatically stops the currently running one
+
+### Stop tracking
+```shell
+sigye stop ["optional comment"] --stop_time "HH:MM"
+```
+
+The stop command ends time tracking for the current project. You can:
+- Add an optional comment in quotes to describe what was completed
+- Specify a custom stop time using --stop_time (or -s) in 24-hour format (HH:MM or HH:MM:SS) or AM/PM format
+- Use stop without a comment to simply end tracking
+- If no stop time is specified, the current time is used
 
 ### Check status
 ```shell
 sigye status
-```
-
-### Stop tracking
-```shell
-sigye stop
 ```
 
 ### List Entries
@@ -87,6 +100,39 @@ To edit an entry, use the full or partial ID (just has to be enough digits for i
 ```shell
 sigye edit ID
 ```
+
+## Configuration
+
+sigye can be configured using a YAML configuration file located at `~/.sigye/config.yaml`. Here's an example configuration file with available options:
+
+```yaml
+# Override the default locale (en_US)
+# locale: ko_KR
+
+# Auto-tagging rules
+# Each rule consists of:
+#   - pattern: regular expression pattern to match against project name
+#   - match_type: how to match the pattern (regex)
+#   - tags: list of tags to apply when pattern matches
+auto_tag_rules:
+  - pattern: "^abc"  # Matches projects starting with "abc"
+    match_type: "regex"
+    tags: ["learning"]
+  
+  - pattern: "^PROJ-\\d+"  # Matches PROJ- followed by numbers
+    match_type: "regex"
+    tags: ["work", "billable"]
+  
+  - pattern: ".*-urgent$"  # Projects ending with "-urgent"
+    match_type: "regex"
+    tags: ["urgent", "high-priority"]
+  
+  - pattern: "(feature|bugfix)/"  # Projects containing feature/ or bugfix/
+    match_type: "regex"
+    tags: ["development"]
+```
+
+The auto-tagging rules automatically apply tags to your time entries based on the project name. This helps maintain consistent tagging across similar projects without having to manually specify tags each time.
 
 ### Localization Support (experimental Korean output)
 To get *output* in Korean:
