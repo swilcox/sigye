@@ -1,6 +1,6 @@
 [project]
 name = "sigye"
-version = "0.5.1"
+version = "0.6.0"
 description = "(시계) A simple command-line program for tracking time."
 readme = "README.md"
 license = { text = "MIT License" }
@@ -13,6 +13,8 @@ dependencies = [
     "pydantic>=2.9.2",
     "pyyaml>=6.0.2",
     "rich>=13.9.4",
+    "click-aliases>=1.0.5",
+    "click-datetime>=0.4.0",
 ]
 
 [project.scripts]

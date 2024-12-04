@@ -69,7 +69,7 @@ def test_start_command(tmp_path):
             cli, ["-f", "test.yaml", "start", "test-project", "--start_time", "invalid"]
         )
         assert result.exit_code != 0
-        assert "Invalid start time format" in result.output
+        assert "Invalid time format" in result.output
 
 
 def test_stop_command(tmp_path):
@@ -95,7 +95,7 @@ def test_stop_command(tmp_path):
             cli, ["-f", "test.yaml", "stop", "--stop_time", "invalid"]
         )
         assert result.exit_code != 0
-        assert "Invalid start time format" in result.output
+        assert "Invalid time format" in result.output
 
 
 def test_status_command(tmp_path):
@@ -115,8 +115,8 @@ def test_status_command(tmp_path):
         assert "test comment" in result.output
 
 
-def test_list_command(tmp_path):
-    """Test the list command"""
+def test_list_command_and_aliases(tmp_path):
+    """Test the list command and its aliases"""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create some entries
@@ -125,8 +125,14 @@ def test_list_command(tmp_path):
         runner.invoke(cli, ["-f", "test.yaml", "start", "project2", "--tag", "tag2"])
         runner.invoke(cli, ["-f", "test.yaml", "stop"])
 
-        # List all entries
+        # Test main 'list' command
         result = runner.invoke(cli, ["-f", "test.yaml", "list"])
+        assert result.exit_code == 0
+        assert "project1" in result.output
+        assert "project2" in result.output
+
+        # Test 'ls' alias
+        result = runner.invoke(cli, ["-f", "test.yaml", "ls"])
         assert result.exit_code == 0
         assert "project1" in result.output
         assert "project2" in result.output
@@ -173,8 +179,8 @@ def test_edit_command(tmp_path):
             assert "No entry found" in result.output
 
 
-def test_delete_command(tmp_path):
-    """Test the delete command"""
+def test_delete_command_and_aliases(tmp_path):
+    """Test the delete command and its aliases"""
     with mock.patch(
         "sigye.cli.single_entry_output", side_effect=mock_single_entry_output
     ):
@@ -187,8 +193,28 @@ def test_delete_command(tmp_path):
             # Extract the ID from the output
             entry_id = result.output.split()[0]  # Assuming ID is first word in output
 
-            # Delete the entry
+            # Test main 'delete' command
             result = runner.invoke(cli, ["-f", "test.yaml", "delete", entry_id])
+            assert result.exit_code == 0
+            assert "test-project" in result.output
+
+            # Create another entry for testing aliases
+            result = runner.invoke(cli, ["-f", "test.yaml", "start", "test-project"])
+            runner.invoke(cli, ["-f", "test.yaml", "stop"])
+            entry_id = result.output.split()[0]
+
+            # Test 'rm' alias
+            result = runner.invoke(cli, ["-f", "test.yaml", "rm", entry_id])
+            assert result.exit_code == 0
+            assert "test-project" in result.output
+
+            # Create another entry for testing aliases
+            result = runner.invoke(cli, ["-f", "test.yaml", "start", "test-project"])
+            runner.invoke(cli, ["-f", "test.yaml", "stop"])
+            entry_id = result.output.split()[0]
+
+            # Test 'del' alias
+            result = runner.invoke(cli, ["-f", "test.yaml", "del", entry_id])
             assert result.exit_code == 0
             assert "test-project" in result.output
 

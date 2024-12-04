@@ -1,5 +1,6 @@
 from datetime import datetime, time
 import re
+import click
 
 
 def parse_time(time_str: str) -> datetime:
@@ -38,3 +39,14 @@ def parse_time(time_str: str) -> datetime:
 
     today = datetime.now().date()
     return datetime.combine(today, time(hours, minutes, seconds)).astimezone()
+
+
+def validate_time(
+    ctx: click.Context, param: click.Parameter, value: str | None
+) -> datetime | None:
+    if value is None:
+        return None
+    try:
+        return parse_time(value)
+    except ValueError as ex:
+        raise click.BadParameter(str(ex))
