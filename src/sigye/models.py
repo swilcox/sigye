@@ -66,7 +66,7 @@ class EntryListFilter(BaseModel):
     start_date: date | None = None
     end_date: date | None = None
     tags: set[str] = Field(default_factory=set)
-    time_period: Literal["today", "week", "month"] | None = None
+    time_period: Literal["today", "yesterday", "week", "month", "all", ""] | None = None
     output_format: str | None = None
 
     def __init__(self, **data):
@@ -77,8 +77,13 @@ class EntryListFilter(BaseModel):
     def _apply_time_period(self):
         """Apply date filters based on time period"""
         now = datetime.now()
+        if self.time_period == "all":
+            return  # No need to set date filters
         if self.time_period == "today":
             self.start_date = now.date()
+        if self.time_period == "yesterday":
+            self.start_date = now.date() - timedelta(days=1)
+            self.end_date = now.date() - timedelta(days=1)
         elif self.time_period == "week":
             self.start_date = now.date() - timedelta(
                 days=now.date().weekday()
