@@ -2,15 +2,13 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from ..models import TimeEntry, EntryListFilter
+from ..models import EntryListFilter, TimeEntry
 
 
 def test_time_entry():
     now = datetime.now().astimezone()
 
-    t1 = TimeEntry(
-        start_time=now + timedelta(hours=-4), project="test-project", comment="hello"
-    )
+    t1 = TimeEntry(start_time=now + timedelta(hours=-4), project="test-project", comment="hello")
     t2 = TimeEntry(
         start_time=now + timedelta(hours=-2, minutes=-30),
         end_time=now,
@@ -26,9 +24,7 @@ def test_time_entry():
 def test_time_entry_stop():
     now = datetime.now().astimezone()
 
-    t1 = TimeEntry(
-        start_time=now + timedelta(hours=-4), project="test-project", comment="hello"
-    )
+    t1 = TimeEntry(start_time=now + timedelta(hours=-4), project="test-project", comment="hello")
     t1.stop()
     assert t1.humanized_duration == "4 hours"
     assert t1.end_time is not None

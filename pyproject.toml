@@ -1,6 +1,6 @@
 [project]
 name = "sigye"
-version = "0.6.0"
+version = "0.6.1"
 description = "(시계) A simple command-line program for tracking time."
 readme = "README.md"
 license = { text = "MIT License" }
@@ -25,4 +25,30 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["freezegun>=1.5.1", "pytest-cov>=6.0.0", "pytest>=8.3.3"]
+dev = [
+    "freezegun>=1.5.1",
+    "pytest-cov>=6.0.0",
+    "pytest>=8.3.3",
+    "ruff>=0.8.1",
+]
+
+[tool.ruff]
+line-length = 120
+fix = true
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+extend-fixable = ["E", "F", "UP", "B", "SIM", "I"]

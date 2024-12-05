@@ -1,26 +1,22 @@
-from datetime import datetime
-import humanize.i18n
 from pathlib import Path
 
 import click
+import humanize
+import humanize.i18n
 from click_aliases import ClickAliasedGroup
 from click_datetime import Datetime
-import humanize
 
-from .config.settings import Settings, DEFAULT_CONFIG_PATH
+from .config.settings import DEFAULT_CONFIG_PATH, Settings
 from .models import EntryListFilter
 from .output.text_output import list_output, single_entry_output
-from .services import TimeTrackingService, EditorServiceError
-from .utils.translation import init_translations
+from .services import EditorServiceError, TimeTrackingService
 from .utils.datetime_utils import validate_time
+from .utils.translation import init_translations
 
 
 def load_settings(config_file: Path | None = None) -> Settings:
     """Load settings from config file, falling back to defaults if needed"""
-    if config_file:
-        settings = Settings.load_from_file(config_file)
-    else:
-        settings = Settings.load_from_file()
+    settings = Settings.load_from_file(config_file) if config_file else Settings.load_from_file()
     if settings.locale not in ["en", "en_US", "en_GB"]:
         _ = humanize.i18n.activate(settings.locale)
         _ = init_translations(lang=settings.locale)
@@ -69,9 +65,7 @@ def cli(ctx, config_file, filename):
 @pass_tts
 def start(tts, project, comment, tag, start_time):
     """start tracking work on a project"""
-    time_entry = tts.start_tracking(
-        project, comment=comment, tags=set(tag), start_time=start_time
-    )
+    time_entry = tts.start_tracking(project, comment=comment, tags=set(tag), start_time=start_time)
     single_entry_output(time_entry)
 
 
@@ -112,14 +106,14 @@ def edit_entry(tts, id):
     """edit a time entry using the system editor"""
     try:
         entry = tts.get_entry_by_partial_id(id)
-    except KeyError:
-        raise click.ClickException(f"No entry found with id {id}")
-    except IndexError:
-        raise click.ClickException(f"Multiple records found starting with id {id}")
+    except KeyError as e:
+        raise click.ClickException(f"No entry found with id {id}") from e
+    except IndexError as e:
+        raise click.ClickException(f"Multiple records found starting with id {id}") from e
     try:
         single_entry_output(tts.edit_entry(entry.id))
     except EditorServiceError as e:
-        raise click.ClickException(f"Error editing entry: {str(e)}")
+        raise click.ClickException(f"Error editing entry: {str(e)}") from e
 
 
 @cli.command("delete", aliases=["del", "rm"])
@@ -129,10 +123,10 @@ def delete_entry(tts, id):
     """delete a time entry"""
     try:
         entry = tts.get_entry_by_partial_id(id)  # Get the entry to delete
-    except KeyError:
-        raise click.ClickException(f"No entry found with id {id}")
-    except IndexError:
-        raise click.ClickException(f"Multiple records found starting with id {id}")
+    except KeyError as e:
+        raise click.ClickException(f"No entry found with id {id}") from e
+    except IndexError as e:
+        raise click.ClickException(f"Multiple records found starting with id {id}") from e
     entry = tts.delete_entry(entry.id)
     single_entry_output(entry)
 
@@ -149,9 +143,7 @@ def delete_entry(tts, id):
     type=Datetime(format="%Y-%m-%d"),
     help="Start date in format YYYY-MM-DD",
 )
-@click.option(
-    "--end_date", type=Datetime(format="%Y-%m-%d"), help="End date in format YYYY-MM-DD"
-)
+@click.option("--end_date", type=Datetime(format="%Y-%m-%d"), help="End date in format YYYY-MM-DD")
 @click.option("--tag", multiple=True)
 @click.option("--project", multiple=True)
 @click.option("--format")

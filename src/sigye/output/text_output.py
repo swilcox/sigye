@@ -1,9 +1,11 @@
 from datetime import date, timedelta
+
+import humanize
 from rich.console import Console
 from rich.table import Table
+
 from ..models import TimeEntry
 from ..utils.translation import gettext as _
-import humanize
 
 ABBR_ID_LENGTH = 4
 
@@ -24,14 +26,10 @@ def single_entry_output(entry: TimeEntry | None):
         _("ID"),
         f"[magenta]{entry.id[0:ABBR_ID_LENGTH]}[/magenta]{entry.id[ABBR_ID_LENGTH:]}",
     )
-    table.add_row(
-        _("start time"), f"[cyan]{entry.naive_start_time:%Y-%m-%d %H:%M:%S}[/cyan]"
-    )
+    table.add_row(_("start time"), f"[cyan]{entry.naive_start_time:%Y-%m-%d %H:%M:%S}[/cyan]")
     table.add_row(
         _("end time"),
-        f"[magenta]{entry.naive_end_time:%H:%M:%S}[/magenta]"
-        if entry.end_time
-        else "-",
+        f"[magenta]{entry.naive_end_time:%H:%M:%S}[/magenta]" if entry.end_time else "-",
     )
     table.add_row(_("delta"), f"[cyan]{entry.humanized_duration}[/cyan]")
     table.add_row(_("project"), f"[green]{entry.project}[/green]")

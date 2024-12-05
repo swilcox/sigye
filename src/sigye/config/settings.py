@@ -1,11 +1,11 @@
 import os
+import re
 from pathlib import Path
 from typing import Literal, Self
-import re
+
 import yaml
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 DEFAULT_HOME_DIRECTORY = Path.home() / ".sigye"
 DEFAULT_HOME_DIRECTORY.mkdir(exist_ok=True, parents=True)

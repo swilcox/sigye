@@ -1,5 +1,6 @@
-from datetime import datetime, time
 import re
+from datetime import datetime, time
+
 import click
 
 
@@ -11,9 +12,7 @@ def parse_time(time_str: str) -> datetime:
     match = re.match(pattern, time_str, re.IGNORECASE)
 
     if not match:
-        raise ValueError(
-            "Invalid time format. Use HH:MM or HH:MM:SS with optional AM/PM"
-        )
+        raise ValueError("Invalid time format. Use HH:MM or HH:MM:SS with optional AM/PM")
 
     hours, minutes, seconds, meridiem = match.groups()
     hours = int(hours)
@@ -41,12 +40,10 @@ def parse_time(time_str: str) -> datetime:
     return datetime.combine(today, time(hours, minutes, seconds)).astimezone()
 
 
-def validate_time(
-    ctx: click.Context, param: click.Parameter, value: str | None
-) -> datetime | None:
+def validate_time(ctx: click.Context, param: click.Parameter, value: str | None) -> datetime | None:
     if value is None:
         return None
     try:
         return parse_time(value)
     except ValueError as ex:
-        raise click.BadParameter(str(ex))
+        raise click.BadParameter(str(ex)) from ex

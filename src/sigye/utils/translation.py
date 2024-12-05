@@ -1,6 +1,6 @@
 import gettext as gettextlib
 import os
-from typing import Callable
+from collections.abc import Callable
 
 # Global translation function
 _translator: Callable = gettextlib.gettext
@@ -19,9 +19,7 @@ def init_translations(lang: str = "ko") -> None:
     global _translator
     t_lang = LANG_MAP.get(lang, "en")
     localedir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "locale")
-    translations = gettextlib.translation(
-        "messages", localedir=localedir, languages=[t_lang], fallback=True
-    )
+    translations = gettextlib.translation("messages", localedir=localedir, languages=[t_lang], fallback=True)
     translations.install()
     _translator = translations.gettext
 

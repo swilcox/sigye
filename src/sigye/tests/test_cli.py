@@ -1,13 +1,13 @@
-from click.testing import CliRunner
 from unittest import mock
+
+from click.testing import CliRunner
+
 from ..cli import cli, load_settings
 from ..models import TimeEntry
 
 
 def mock_single_entry_output(entry: TimeEntry):
-    print(
-        f"{entry.id} {entry.start_time} {entry.end_time} {entry.project} {entry.comment}"
-    )
+    print(f"{entry.id} {entry.start_time} {entry.end_time} {entry.project} {entry.comment}")
 
 
 def test_load_settings(tmp_path):
@@ -58,16 +58,12 @@ def test_start_command(tmp_path):
         assert "tag2" in result.output
 
         # Start with specific time
-        result = runner.invoke(
-            cli, ["-f", "test.yaml", "start", "test-project", "--start_time", "09:00"]
-        )
+        result = runner.invoke(cli, ["-f", "test.yaml", "start", "test-project", "--start_time", "09:00"])
         assert result.exit_code == 0
         assert "09:00" in result.output
 
         # Invalid time format
-        result = runner.invoke(
-            cli, ["-f", "test.yaml", "start", "test-project", "--start_time", "invalid"]
-        )
+        result = runner.invoke(cli, ["-f", "test.yaml", "start", "test-project", "--start_time", "invalid"])
         assert result.exit_code != 0
         assert "Invalid time format" in result.output
 
@@ -91,9 +87,7 @@ def test_stop_command(tmp_path):
         assert "17:00" in result.output
 
         # Invalid time format
-        result = runner.invoke(
-            cli, ["-f", "test.yaml", "stop", "--stop_time", "invalid"]
-        )
+        result = runner.invoke(cli, ["-f", "test.yaml", "stop", "--stop_time", "invalid"])
         assert result.exit_code != 0
         assert "Invalid time format" in result.output
 
@@ -144,9 +138,7 @@ def test_list_command_and_aliases(tmp_path):
         assert "project2" in result.output
 
         # List with project filter
-        result = runner.invoke(
-            cli, ["-f", "test.yaml", "list", "--project", "project1"]
-        )
+        result = runner.invoke(cli, ["-f", "test.yaml", "list", "--project", "project1"])
         assert result.exit_code == 0
         assert "project1" in result.output
         assert "project2" not in result.output
@@ -161,29 +153,27 @@ def test_list_command_and_aliases(tmp_path):
 def test_edit_command(tmp_path):
     """Test the edit command"""
     runner = CliRunner()
-    with mock.patch(
-        "sigye.cli.single_entry_output", side_effect=mock_single_entry_output
+    with (
+        mock.patch("sigye.cli.single_entry_output", side_effect=mock_single_entry_output),
+        runner.isolated_filesystem(temp_dir=tmp_path),
     ):
-        with runner.isolated_filesystem(temp_dir=tmp_path):
-            # Create an entry
-            result = runner.invoke(cli, ["-f", "test.yaml", "start", "test-project"])
-            runner.invoke(cli, ["-f", "test.yaml", "stop"])
+        # Create an entry
+        result = runner.invoke(cli, ["-f", "test.yaml", "start", "test-project"])
+        runner.invoke(cli, ["-f", "test.yaml", "stop"])
 
-            # Extract the ID from the output
-            entry_id = result.output.split()[0]  # Assuming ID is first word in output
-            assert entry_id is not None
+        # Extract the ID from the output
+        entry_id = result.output.split()[0]  # Assuming ID is first word in output
+        assert entry_id is not None
 
-            # Try to edit with invalid ID
-            result = runner.invoke(cli, ["-f", "test.yaml", "edit", "invalid-id"])
-            assert result.exit_code != 0
-            assert "No entry found" in result.output
+        # Try to edit with invalid ID
+        result = runner.invoke(cli, ["-f", "test.yaml", "edit", "invalid-id"])
+        assert result.exit_code != 0
+        assert "No entry found" in result.output
 
 
 def test_delete_command_and_aliases(tmp_path):
     """Test the delete command and its aliases"""
-    with mock.patch(
-        "sigye.cli.single_entry_output", side_effect=mock_single_entry_output
-    ):
+    with mock.patch("sigye.cli.single_entry_output", side_effect=mock_single_entry_output):
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create an entry

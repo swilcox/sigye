@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from ..models import TimeEntry, EntryListFilter
+
+from ..models import EntryListFilter, TimeEntry
 
 
 class TimeEntryRepository(ABC):

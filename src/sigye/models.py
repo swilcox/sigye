@@ -1,10 +1,10 @@
-from datetime import datetime, date, timedelta
-from uuid import uuid4
+from datetime import date, datetime, timedelta
 from typing import Literal
+from uuid import uuid4
 
+import humanize
 import humanize.i18n
 from pydantic import BaseModel, Field
-import humanize
 
 
 class TimeEntry(BaseModel):
@@ -17,11 +17,7 @@ class TimeEntry(BaseModel):
 
     @property
     def humanized_duration(self):
-        td = (
-            self.end_time - self.start_time
-            if self.end_time
-            else datetime.now().astimezone() - self.start_time
-        )
+        td = self.end_time - self.start_time if self.end_time else datetime.now().astimezone() - self.start_time
 
         return humanize.precisedelta(
             td,
@@ -44,20 +40,14 @@ class TimeEntry(BaseModel):
         return self._get_naive_time(self.end_time)
 
     def stop(self, end_time: datetime = None):
-        if self.end_time is None or (
-            self.end_time is not None and self.end_time < self.start_time
-        ):
+        if self.end_time is None or (self.end_time is not None and self.end_time < self.start_time):
             self.end_time = end_time or datetime.now().astimezone()
         else:
             raise ValueError("already stopped")
 
     @property
     def duration(self):
-        return (
-            self.end_time - self.start_time
-            if self.end_time
-            else datetime.now().astimezone() - self.start_time
-        )
+        return self.end_time - self.start_time if self.end_time else datetime.now().astimezone() - self.start_time
 
 
 class EntryListFilter(BaseModel):
@@ -85,10 +75,6 @@ class EntryListFilter(BaseModel):
             self.start_date = now.date() - timedelta(days=1)
             self.end_date = now.date() - timedelta(days=1)
         elif self.time_period == "week":
-            self.start_date = now.date() - timedelta(
-                days=now.date().weekday()
-            )  # Monday
+            self.start_date = now.date() - timedelta(days=now.date().weekday())  # Monday
         elif self.time_period == "month":
-            self.start_date = now.date() - timedelta(
-                days=(now.date().day - 1)
-            )  # 1st of current month
+            self.start_date = now.date() - timedelta(days=(now.date().day - 1))  # 1st of current month

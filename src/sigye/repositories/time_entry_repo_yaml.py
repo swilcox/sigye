@@ -1,7 +1,8 @@
 import os
+
 import yaml
-from typing import Optional
-from ..models import TimeEntry, EntryListFilter
+
+from ..models import EntryListFilter, TimeEntry
 from .time_entry_repo import TimeEntryRepository
 
 
@@ -17,7 +18,7 @@ class TimeEntryRepositoryYaml(TimeEntryRepository):
 
     def _load_data(self) -> dict:
         if self._cache is None:
-            with open(self.filename, "r") as f:
+            with open(self.filename) as f:
                 self._cache = yaml.load(f, yaml.FullLoader)
         return self._cache
 
@@ -29,7 +30,7 @@ class TimeEntryRepositoryYaml(TimeEntryRepository):
     def _invalidate_cache(self):
         self._cache = None
 
-    def get_active_entry(self) -> Optional[TimeEntry]:
+    def get_active_entry(self) -> TimeEntry | None:
         data = self._load_data()
         active = next((e for e in data["entries"] if not e.get("end_time")), None)
         return TimeEntry(**active) if active else None
@@ -42,11 +43,7 @@ class TimeEntryRepositoryYaml(TimeEntryRepository):
 
     def get_by_project(self, project: str) -> list[TimeEntry]:
         data = self._load_data()
-        return [
-            TimeEntry(**entry)
-            for entry in data["entries"]
-            if entry["project"] == project
-        ]
+        return [TimeEntry(**entry) for entry in data["entries"] if entry["project"] == project]
 
     def get_entry_by_id(self, id: str) -> TimeEntry:
         data = self._load_data()
@@ -72,9 +69,7 @@ class TimeEntryRepositoryYaml(TimeEntryRepository):
     @staticmethod
     def _project_matching(filter_projects: set[str], project: str) -> bool:
         for f_proj in filter_projects:
-            if (
-                f_proj[-1] in "*+." and project.startswith(f_proj[0:-1])
-            ) or f_proj == project:
+            if (f_proj[-1] in "*+." and project.startswith(f_proj[0:-1])) or f_proj == project:
                 return True
         return False
 
@@ -83,16 +78,10 @@ class TimeEntryRepositoryYaml(TimeEntryRepository):
             # id filter
             (not filter.id or entry.id.startswith(filter.id)),
             # Project filters
-            (
-                not filter.projects
-                or self._project_matching(filter.projects, entry.project)
-            ),
+            (not filter.projects or self._project_matching(filter.projects, entry.project)),
             # Date filters
             (not filter.start_date or entry.start_time.date() >= filter.start_date),
-            (
-                not filter.end_date
-                or (entry.end_time and entry.end_time.date() <= filter.end_date)
-            ),
+            (not filter.end_date or (entry.end_time and entry.end_time.date() <= filter.end_date)),
             # Tag filter
             (not filter.tags or any(tag in entry.tags for tag in filter.tags)),
         ]
@@ -102,9 +91,7 @@ class TimeEntryRepositoryYaml(TimeEntryRepository):
         time_entries = self.get_all()
         if filter is None:
             return time_entries
-        return [
-            entry for entry in time_entries if self._check_against_filter(filter, entry)
-        ]
+        return [entry for entry in time_entries if self._check_against_filter(filter, entry)]
 
     def save(self, entry: TimeEntry) -> None:
         data = self._load_data()

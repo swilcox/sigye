@@ -1,13 +1,15 @@
 # domain/services.py
-from datetime import datetime
 import os
 import subprocess
 import tempfile
+from datetime import datetime
+
 import yaml
+
+from .config.settings import Settings
 from .models import EntryListFilter, TimeEntry
 from .repositories.time_entry_repo import TimeEntryRepository
 from .repositories.time_entry_repo_yaml import TimeEntryRepositoryYaml
-from .config.settings import Settings
 
 
 class EditorServiceError(Exception): ...
@@ -37,14 +39,12 @@ class YAMLEditorService(EditorService):
             data = yaml.safe_load(content)
             return TimeEntry(**data)
         except Exception as e:
-            raise EditorServiceError(f"Invalid entry format: {str(e)}")
+            raise EditorServiceError(f"Invalid entry format: {str(e)}") from e
 
     def edit_entry(self, entry: TimeEntry) -> TimeEntry:
         """Edit a time entry in the user's preferred editor"""
         # Create temp file with entry content
-        with tempfile.NamedTemporaryFile(
-            suffix=".yaml", mode="w+", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w+", delete=False) as tmp:
             tmp.write(self._format_entry_for_edit(entry))
             tmp.flush()
             tmp_path = tmp.name
@@ -54,7 +54,7 @@ class YAMLEditorService(EditorService):
             subprocess.run([self.editor_command, tmp_path], check=True)
 
             # Read and parse edited content
-            with open(tmp_path, "r") as f:
+            with open(tmp_path) as f:
                 edited_content = f.read()
                 updated_entry = self._parse_edited_entry(edited_content)
 

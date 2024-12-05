@@ -1,6 +1,8 @@
 from datetime import datetime
+
 import pytest
 from freezegun import freeze_time
+
 from ..datetime_utils import parse_time
 
 
