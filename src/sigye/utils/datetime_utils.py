@@ -1,7 +1,8 @@
 import re
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 import click
+import humanize
 
 
 def parse_time(time_str: str) -> datetime:
@@ -47,3 +48,16 @@ def validate_time(ctx: click.Context, param: click.Parameter, value: str | None)
         return parse_time(value)
     except ValueError as ex:
         raise click.BadParameter(str(ex)) from ex
+
+
+def format_delta(td: timedelta) -> str:
+    return humanize.precisedelta(
+        td,
+        suppress=(
+            "years",
+            "months",
+            "days",
+        ),
+        minimum_unit="hours",
+        format="%0.1f",
+    )

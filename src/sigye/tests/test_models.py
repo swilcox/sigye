@@ -85,8 +85,3 @@ def test_entry_list_filter_tags():
     assert len(filter.tags) == 2
     assert "tag1" in filter.tags
     assert "tag2" in filter.tags
-
-
-def test_entry_list_filter_format():
-    filter = EntryListFilter(output_format="json")
-    assert filter.output_format == "json"

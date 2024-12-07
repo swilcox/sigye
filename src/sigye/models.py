@@ -57,7 +57,6 @@ class EntryListFilter(BaseModel):
     end_date: date | None = None
     tags: set[str] = Field(default_factory=set)
     time_period: Literal["today", "yesterday", "week", "month", "all", ""] | None = None
-    output_format: str | None = None
 
     def __init__(self, **data):
         super().__init__(**data)

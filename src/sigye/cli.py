@@ -1,29 +1,32 @@
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
-import humanize
-import humanize.i18n
 from click_aliases import ClickAliasedGroup
 from click_datetime import Datetime
 
 from .config.settings import DEFAULT_CONFIG_PATH, Settings
 from .models import EntryListFilter
-from .output.text_output import list_output, single_entry_output
+from .output import OutputFormatter, OutputType, create_output_formatter, validate_output_format
 from .services import EditorServiceError, TimeTrackingService
 from .utils.datetime_utils import validate_time
-from .utils.translation import init_translations
+from .utils.translation import set_locale
 
 
 def load_settings(config_file: Path | None = None) -> Settings:
     """Load settings from config file, falling back to defaults if needed"""
     settings = Settings.load_from_file(config_file) if config_file else Settings.load_from_file()
-    if settings.locale not in ["en", "en_US", "en_GB"]:
-        _ = humanize.i18n.activate(settings.locale)
-        _ = init_translations(lang=settings.locale)
+    set_locale(settings.locale)
     return settings
 
 
-pass_tts = click.make_pass_decorator(TimeTrackingService, ensure=True)
+@dataclass
+class ContextObject:
+    tts: TimeTrackingService
+    output: OutputFormatter
+
+
+pass_context_object = click.make_pass_decorator(ContextObject, ensure=True)
 
 
 @click.group(cls=ClickAliasedGroup)
@@ -42,11 +45,22 @@ pass_tts = click.make_pass_decorator(TimeTrackingService, ensure=True)
     type=click.Path(path_type=Path),
     help="Path to data file",
 )
+@click.option(
+    "--output_format",
+    "-o",
+    type=click.Choice(OutputType.choices(), case_sensitive=False),
+    help="Output format",
+    callback=validate_output_format,
+)
 @click.pass_context
-def cli(ctx, config_file, filename):
+def cli(ctx, config_file, filename, output_format: OutputType | None):
     settings = load_settings(config_file)
     settings.data_filename = filename or settings.data_filename
-    ctx.obj = TimeTrackingService(settings)
+    settings.output_format = output_format or settings.output_format
+    ctx.obj = ContextObject(
+        TimeTrackingService(settings),
+        create_output_formatter(settings.output_format, force=(bool(output_format))),
+    )
 
 
 @cli.command("start")
@@ -62,11 +76,11 @@ def cli(ctx, config_file, filename):
     default=None,
     callback=validate_time,
 )
-@pass_tts
-def start(tts, project, comment, tag, start_time):
+@pass_context_object
+def start(context: ContextObject, project, comment, tag, start_time):
     """start tracking work on a project"""
-    time_entry = tts.start_tracking(project, comment=comment, tags=set(tag), start_time=start_time)
-    single_entry_output(time_entry)
+    time_entry = context.tts.start_tracking(project, comment=comment, tags=set(tag), start_time=start_time)
+    context.output.single_entry_output(time_entry)
 
 
 @cli.command("stop")
@@ -80,55 +94,55 @@ def start(tts, project, comment, tag, start_time):
     default=None,
     help="Stop/End time expressed as HH:MM or HH:MM:SS in 24-hour format or AM/PM",
 )
-@pass_tts
-def stop(tts: TimeTrackingService, comment, stop_time):
+@pass_context_object
+def stop(context: ContextObject, comment, stop_time):
     """stop tracking work on a project"""
     if comment:
-        time_entry = tts.get_active_entry()
+        time_entry = context.tts.get_active_entry()
         time_entry.comment = comment
-        time_entry = tts.update_entry(time_entry)
-    time_entry = tts.stop_tracking(stop_time=stop_time)
-    single_entry_output(time_entry)
+        time_entry = context.tts.update_entry(time_entry)
+    time_entry = context.tts.stop_tracking(stop_time=stop_time)
+    context.output.single_entry_output(time_entry)
 
 
 @cli.command("status")
-@pass_tts
-def status(tts):
+@pass_context_object
+def status(context: ContextObject):
     """displays currently tracked (if active)"""
-    time_entry = tts.get_active_entry()
-    single_entry_output(time_entry)
+    time_entry = context.tts.get_active_entry()
+    context.output.single_entry_output(time_entry)
 
 
 @cli.command("edit")
 @click.argument("id", required=True, type=str)
-@pass_tts
-def edit_entry(tts, id):
+@pass_context_object
+def edit_entry(context: ContextObject, id):
     """edit a time entry using the system editor"""
     try:
-        entry = tts.get_entry_by_partial_id(id)
+        entry = context.tts.get_entry_by_partial_id(id)
     except KeyError as e:
         raise click.ClickException(f"No entry found with id {id}") from e
     except IndexError as e:
         raise click.ClickException(f"Multiple records found starting with id {id}") from e
     try:
-        single_entry_output(tts.edit_entry(entry.id))
+        context.output.single_entry_output(context.tts.edit_entry(entry.id))
     except EditorServiceError as e:
         raise click.ClickException(f"Error editing entry: {str(e)}") from e
 
 
 @cli.command("delete", aliases=["del", "rm"])
 @click.argument("id", required=True, type=str)
-@pass_tts
-def delete_entry(tts, id):
+@pass_context_object
+def delete_entry(context: ContextObject, id):
     """delete a time entry"""
     try:
-        entry = tts.get_entry_by_partial_id(id)  # Get the entry to delete
+        entry = context.tts.get_entry_by_partial_id(id)  # Get the entry to delete
     except KeyError as e:
         raise click.ClickException(f"No entry found with id {id}") from e
     except IndexError as e:
         raise click.ClickException(f"Multiple records found starting with id {id}") from e
-    entry = tts.delete_entry(entry.id)
-    single_entry_output(entry)
+    entry = context.tts.delete_entry(entry.id)
+    context.output.single_entry_output(entry)
 
 
 @cli.command("list", aliases=["ls"])
@@ -147,8 +161,8 @@ def delete_entry(tts, id):
 @click.option("--tag", multiple=True)
 @click.option("--project", multiple=True)
 @click.option("--format")
-@pass_tts
-def list_entries(tts, time_period, start_date, end_date, tag, project, format):
+@pass_context_object
+def list_entries(context: ContextObject, time_period, start_date, end_date, tag, project, format):
     """display list of time entries for a time period"""
     filter = EntryListFilter(
         time_period=time_period,
@@ -158,5 +172,5 @@ def list_entries(tts, time_period, start_date, end_date, tag, project, format):
         projects=set(project),
         output_format=format,
     )
-    time_list = tts.list_entries(filter=filter)
-    list_output(time_list)
+    time_list = context.tts.list_entries(filter=filter)
+    context.output.multiple_entries_output(time_list)

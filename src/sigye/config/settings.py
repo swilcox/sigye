@@ -7,6 +7,8 @@ import yaml
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from ..output import OutputType
+
 DEFAULT_HOME_DIRECTORY = Path.home() / ".sigye"
 DEFAULT_HOME_DIRECTORY.mkdir(exist_ok=True, parents=True)
 DEFAULT_CONFIG_PATH = DEFAULT_HOME_DIRECTORY / "config.yaml"
@@ -25,6 +27,7 @@ class Settings(BaseSettings):
     locale: str = Field(default="en_US")
     auto_tag_rules: list[AutoTagRule] = []
     editor: str = Field(default=DEFAULT_EDITOR)
+    output_format: OutputType = Field(default=OutputType.EMPTY)
 
     @classmethod
     def load_from_file(cls, path: Path = DEFAULT_CONFIG_PATH) -> Self:
