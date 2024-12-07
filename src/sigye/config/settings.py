@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     locale: str = Field(default="en_US")
     auto_tag_rules: list[AutoTagRule] = []
     editor: str = Field(default=DEFAULT_EDITOR)
+    output_format: Literal["rich", "json", "text", ""] = Field(default="")
 
     @classmethod
     def load_from_file(cls, path: Path = DEFAULT_CONFIG_PATH) -> Self:

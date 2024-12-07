@@ -4,6 +4,7 @@ from click.testing import CliRunner
 
 from ..cli import cli, load_settings
 from ..models import TimeEntry
+from ..output.text_output import RawTextOutput
 
 
 def mock_single_entry_output(entry: TimeEntry):
@@ -154,7 +155,7 @@ def test_edit_command(tmp_path):
     """Test the edit command"""
     runner = CliRunner()
     with (
-        mock.patch("sigye.cli.single_entry_output", side_effect=mock_single_entry_output),
+        mock.patch("sigye.output.rich_text_output.RichTextOutput", side_effect=RawTextOutput),
         runner.isolated_filesystem(temp_dir=tmp_path),
     ):
         # Create an entry
@@ -173,45 +174,44 @@ def test_edit_command(tmp_path):
 
 def test_delete_command_and_aliases(tmp_path):
     """Test the delete command and its aliases"""
-    with mock.patch("sigye.cli.single_entry_output", side_effect=mock_single_entry_output):
-        runner = CliRunner()
-        with runner.isolated_filesystem(temp_dir=tmp_path):
-            # Create an entry
-            result = runner.invoke(cli, ["-f", "test.yaml", "start", "test-project"])
-            runner.invoke(cli, ["-f", "test.yaml", "stop"])
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Create an entry
+        result = runner.invoke(cli, ["-f", "test.yaml", "-o", "text", "start", "test-project"])
+        runner.invoke(cli, ["-f", "test.yaml", "-o", "text", "stop"])
+        print(f"output: {result.output}")
+        # Extract the ID from the output
+        entry_id = result.output.split()[0]  # Assuming ID is first word in output
 
-            # Extract the ID from the output
-            entry_id = result.output.split()[0]  # Assuming ID is first word in output
+        # Test main 'delete' command
+        result = runner.invoke(cli, ["-f", "test.yaml", "-o", "text", "delete", entry_id])
+        assert result.exit_code == 0
+        assert "test-project" in result.output
 
-            # Test main 'delete' command
-            result = runner.invoke(cli, ["-f", "test.yaml", "delete", entry_id])
-            assert result.exit_code == 0
-            assert "test-project" in result.output
+        # Create another entry for testing aliases
+        result = runner.invoke(cli, ["-f", "test.yaml", "-o", "text", "start", "test-project"])
+        runner.invoke(cli, ["-f", "test.yaml", "stop"])
+        entry_id = result.output.split()[0]
 
-            # Create another entry for testing aliases
-            result = runner.invoke(cli, ["-f", "test.yaml", "start", "test-project"])
-            runner.invoke(cli, ["-f", "test.yaml", "stop"])
-            entry_id = result.output.split()[0]
+        # Test 'rm' alias
+        result = runner.invoke(cli, ["-f", "test.yaml", "-o", "text", "rm", entry_id])
+        assert result.exit_code == 0
+        assert "test-project" in result.output
 
-            # Test 'rm' alias
-            result = runner.invoke(cli, ["-f", "test.yaml", "rm", entry_id])
-            assert result.exit_code == 0
-            assert "test-project" in result.output
+        # Create another entry for testing aliases
+        result = runner.invoke(cli, ["-f", "test.yaml", "-o", "text", "start", "test-project"])
+        runner.invoke(cli, ["-f", "test.yaml", "stop"])
+        entry_id = result.output.split()[0]
 
-            # Create another entry for testing aliases
-            result = runner.invoke(cli, ["-f", "test.yaml", "start", "test-project"])
-            runner.invoke(cli, ["-f", "test.yaml", "stop"])
-            entry_id = result.output.split()[0]
+        # Test 'del' alias
+        result = runner.invoke(cli, ["-f", "test.yaml", "-o", "text", "del", entry_id])
+        assert result.exit_code == 0
+        assert "test-project" in result.output
 
-            # Test 'del' alias
-            result = runner.invoke(cli, ["-f", "test.yaml", "del", entry_id])
-            assert result.exit_code == 0
-            assert "test-project" in result.output
-
-            # Try to delete with invalid ID
-            result = runner.invoke(cli, ["-f", "test.yaml", "delete", "invalid-id"])
-            assert result.exit_code != 0
-            assert "No entry found" in result.output
+        # Try to delete with invalid ID
+        result = runner.invoke(cli, ["-f", "test.yaml", "-o", "text", "delete", "invalid-id"])
+        assert result.exit_code != 0
+        assert "No entry found" in result.output
 
 
 def test_config_file_option(tmp_path):

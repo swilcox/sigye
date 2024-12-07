@@ -35,7 +35,9 @@ By default, entries are stored in a YAML file at: `$HOME/.sigye/time_entries.yml
 
 To override this value, you can add `--filename <date_filename>` on every command to override adhoc.
 
-To override this value for a environment, you can set the environment variable `SIGYE_DATA_FILENAME` to whatever value you'd like and that will become the default.
+To override this value for an environment, you can set the environment variable `SIGYE_DATA_FILENAME` to whatever value you'd like and that will become the default.
+
+Or better yet, set the `data_filename` in the config.yaml file.
 
 > [!IMPORTANT]  
 > Make sure the directory exists before overriding.
@@ -49,15 +51,15 @@ The start command begins tracking time for a project. You can:
 - Add an optional comment in quotes to describe what you're working on
 - Add one or more tags using the --tag option
 - Specify a custom start time using --start_time (or -s) in 24-hour format (HH:MM or HH:MM:SS) or AM/PM format
-- Only one project can be tracked at a time
-- Starting a new project automatically stops the currently running one
+- Only one time entry can be tracked at a time
+- Starting a new entry automatically stops the currently running one
 
 ### Stop tracking
 ```shell
 sigye stop ["optional comment"] --stop_time "HH:MM"
 ```
 
-The stop command ends time tracking for the current project. You can:
+The stop command ends time tracking for the current entry. You can:
 - Add an optional comment in quotes to describe what was completed
 - Specify a custom stop time using --stop_time (or -s) in 24-hour format (HH:MM or HH:MM:SS) or AM/PM format
 - Use stop without a comment to simply end tracking
@@ -75,7 +77,7 @@ sigye list
 ```
 #### List Filtered Entries
 
-All entries from a named time frame (options: `today`, `week` and `month`):
+All entries from a named time frame (options: `today`, `yesterday`, `week` and `month`):
 ```shell
 sigye list TIMEFRAME
 ```
@@ -108,7 +110,7 @@ sigye can be configured using a YAML configuration file located at `~/.sigye/con
 ```yaml
 # Override the default locale (en_US)
 # locale: ko_KR
-
+# data_filename: /full/path/to/a/file.yaml
 # Auto-tagging rules
 # Each rule consists of:
 #   - pattern: regular expression pattern to match against project name
@@ -158,7 +160,7 @@ uv run pytest
 ## Future Changes
 
 * Configuration file support
-  * YAML
+  * YAML (mostly complete now)
   * TOML
 * Language Localization (in-progress)
 * SQLite storage

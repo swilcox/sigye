@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from freezegun import freeze_time
 
-from ..datetime_utils import parse_time
+from ..datetime_utils import format_delta, parse_time
 
 
 @freeze_time("2021-01-01")
@@ -45,3 +45,9 @@ def test_parse_time():
         parse_time("13:00:00 AM")
     with pytest.raises(ValueError):
         parse_time("13:00:00 PM")
+
+
+def test_format_timedelta():
+    assert format_delta(datetime(2021, 1, 1, 12, 0) - datetime(2021, 1, 1, 11, 0)) == "1 hour"
+    assert format_delta(datetime(2021, 1, 1, 12, 0) - datetime(2021, 1, 1, 11, 30)) == "0.5 hours"
+    assert format_delta(datetime(2021, 1, 1, 12, 0) - datetime(2021, 1, 1, 11, 45)) == "0.2 hours"
