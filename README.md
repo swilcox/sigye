@@ -97,6 +97,24 @@ All entries with any tag matching a tag or multiple tags:
 sigye list --tag mytag
 ```
 
+#### List Entries in a Different format
+
+The output format can be set/overridden with the `--output_format` or `-o` option.
+
+Valid options are:
+* `rich` -- colorized text with ascii/unicode characters for nicer display. This is the default output if the `sigye` command is not being redirected somewhere besides `stdout`.
+* `text` -- an extremely plain output mostly used for testing.
+* `json` -- output in JSON format. This is the default if no option is provided and `stdout` is redirected.
+* `yaml` -- output in YAML format, suitable for exporting entries to a new file.
+
+Example:
+
+```
+sigye -o yaml list --project abc.
+```
+
+The above would list all entries that have a project that starts with "abc" in yaml format.
+
 ### Edit Entries
 To edit an entry, use the full or partial ID (just has to be enough digits for it to be unique among your time entry file or data). By default, sigye shows the first 4 digits from an entry ID.
 ```shell
@@ -140,7 +158,7 @@ The auto-tagging rules automatically apply tags to your time entries based on th
 To get *output* in Korean:
 `export SIGYE_LOCALE=ko_KR`
 
-The `sigye list` and `sigye status` commands will output some information in Korean.
+The `sigye list` and `sigye status` commands will now output some information in Korean.
 
 > [!NOTE]
 > This work is ongoing and subject to change.
