@@ -2,25 +2,21 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import click
-import humanize
-import humanize.i18n
 from click_aliases import ClickAliasedGroup
 from click_datetime import Datetime
 
 from .config.settings import DEFAULT_CONFIG_PATH, Settings
 from .models import EntryListFilter
-from .output.output import OutputFormatter
+from .output import OutputFormatter, OutputType, create_output_formatter, validate_output_format
 from .services import EditorServiceError, TimeTrackingService
 from .utils.datetime_utils import validate_time
-from .utils.translation import init_translations
+from .utils.translation import set_locale
 
 
 def load_settings(config_file: Path | None = None) -> Settings:
     """Load settings from config file, falling back to defaults if needed"""
     settings = Settings.load_from_file(config_file) if config_file else Settings.load_from_file()
-    if settings.locale not in ["en", "en_US", "en_GB"]:
-        _ = humanize.i18n.activate(settings.locale)
-        _ = init_translations(lang=settings.locale)
+    set_locale(settings.locale)
     return settings
 
 
@@ -52,16 +48,18 @@ pass_context_object = click.make_pass_decorator(ContextObject, ensure=True)
 @click.option(
     "--output_format",
     "-o",
-    type=click.Choice(["rich", "json", "text", ""]),
+    type=click.Choice(OutputType.choices(), case_sensitive=False),
+    help="Output format",
+    callback=validate_output_format,
 )
 @click.pass_context
-def cli(ctx, config_file, filename, output_format):
+def cli(ctx, config_file, filename, output_format: OutputType | None):
     settings = load_settings(config_file)
     settings.data_filename = filename or settings.data_filename
     settings.output_format = output_format or settings.output_format
     ctx.obj = ContextObject(
         TimeTrackingService(settings),
-        OutputFormatter.create(settings.output_format, force=(bool(output_format))),
+        create_output_formatter(settings.output_format, force=(bool(output_format))),
     )
 
 

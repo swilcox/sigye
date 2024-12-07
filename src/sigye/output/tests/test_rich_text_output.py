@@ -20,3 +20,5 @@ def test_rich_text_output():
     output.single_entry_output(t1)
     output.single_entry_output(t2)
     output.multiple_entries_output([t1, t2])
+
+    # TODO: add assertions for the output

@@ -2,6 +2,8 @@ import gettext as gettextlib
 import os
 from collections.abc import Callable
 
+import humanize.i18n
+
 # Global translation function
 _translator: Callable = gettextlib.gettext
 
@@ -34,3 +36,12 @@ def gettext(message: str) -> str:
 
 # Convenience alias that can be imported
 _ = gettext
+
+
+def set_locale(lang: str) -> None:
+    """
+    Set the locale for translations.
+    """
+    if lang not in ["en", "en_US", "en_GB"]:
+        _ = humanize.i18n.activate(lang)
+        _ = init_translations(lang=lang)

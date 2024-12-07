@@ -1,3 +1,4 @@
+from .. import create_output_formatter
 from ..json_output import JsonOutput
 from ..output import OutputFormatter
 from ..rich_text_output import RichTextOutput
@@ -9,11 +10,11 @@ def test_output():
     output = OutputFormatter()
     assert output
 
-    output = OutputFormatter.create("rich", force=True)
+    output = create_output_formatter("rich", force=True)
     assert isinstance(output, RichTextOutput)
 
-    output = OutputFormatter.create("text", force=True)
+    output = create_output_formatter("text", force=True)
     assert isinstance(output, RawTextOutput)
 
-    output = OutputFormatter.create("json", force=True)
+    output = create_output_formatter("json", force=True)
     assert isinstance(output, JsonOutput)

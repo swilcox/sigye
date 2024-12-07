@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 
 from ...models import TimeEntry
-from ..text_output import RawTextOutput
+from ..yaml_output import YamlOutput
 
 
-def test_raw_text_output():
+def test_yaml_output():
     now = datetime.now().astimezone()
 
     t1 = TimeEntry(start_time=now + timedelta(hours=-4), project="test-project", comment="hello")
@@ -16,9 +16,10 @@ def test_raw_text_output():
         tags=["testtag2"],
     )
 
-    output = RawTextOutput()
+    output = YamlOutput()
     output.single_entry_output(t1)
     output.single_entry_output(t2)
     output.multiple_entries_output([t1, t2])
+    output.single_entry_output(None)
 
     # TODO: add assertions for the output

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from ...models import TimeEntry
-from ..text_output import RawTextOutput
+from ..json_output import JsonOutput
 
 
 def test_raw_text_output():
@@ -16,9 +16,10 @@ def test_raw_text_output():
         tags=["testtag2"],
     )
 
-    output = RawTextOutput()
+    output = JsonOutput()
     output.single_entry_output(t1)
     output.single_entry_output(t2)
     output.multiple_entries_output([t1, t2])
+    output.single_entry_output(None)
 
     # TODO: add assertions for the output
