@@ -52,12 +52,18 @@ class TOMLFormat(EditFormat):
     def format_entry_for_edit(self, entry: TimeEntry) -> str:
         """Format a time entry as TOML for editing"""
         entry_dict = entry.model_dump(mode="json")
-        return toml.dumps(entry_dict)
+        # NOTE: including none_value="null" so we can show all fields in the editor
+        # even if they are None, it's a bit sketchy but it works for now as long as
+        # we don't have any fields that are actually the string "null". It's really
+        # a workaround to the fact that the TOML spec doesn't support null values.
+        return toml.dumps(entry_dict, none_value="null")
 
     def parse_edited_entry(self, content: str) -> TimeEntry:
         """Parse edited TOML content back into a TimeEntry"""
         try:
-            data = toml.loads(content)
+            # NOTE: see comment in format_entry_for_edit where we serialize None values
+            # as "null". TOML spec doesn't support null values so we have to work around
+            data = toml.loads(content, none_value="null")
             return TimeEntry(**data)
         except Exception as e:
             raise EditorError(f"Invalid entry format: {str(e)}") from e

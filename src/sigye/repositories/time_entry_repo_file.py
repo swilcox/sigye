@@ -43,10 +43,10 @@ class TOMLFormat(StorageFormat):
         super().__init__("toml")
 
     def load_data(self, f: TextIO) -> dict:
-        return toml.load(f)
+        return toml.load(f, none_value=None)
 
     def save_data(self, data: dict, f: TextIO):
-        toml.dump(data, f)
+        toml.dump(data, f, none_value=None)
 
 
 class JSONFormat(StorageFormat):
