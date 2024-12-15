@@ -6,9 +6,10 @@ from click_aliases import ClickAliasedGroup
 from click_datetime import Datetime
 
 from .config.settings import DEFAULT_CONFIG_PATH, Settings
+from .editors import EditorError
 from .models import EntryListFilter
 from .output import OutputFormatter, OutputType, create_output_formatter, validate_output_format
-from .services import EditorServiceError, TimeTrackingService
+from .services import TimeTrackingService
 from .utils.datetime_utils import validate_time
 from .utils.translation import set_locale
 
@@ -126,7 +127,7 @@ def edit_entry(context: ContextObject, id):
         raise click.ClickException(f"Multiple records found starting with id {id}") from e
     try:
         context.output.single_entry_output(context.tts.edit_entry(entry.id))
-    except EditorServiceError as e:
+    except EditorError as e:
         raise click.ClickException(f"Error editing entry: {str(e)}") from e
 
 

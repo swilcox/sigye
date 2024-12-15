@@ -4,12 +4,14 @@ from pathlib import Path
 import pytest
 
 from ..config.settings import AutoTagRule, Settings
+from ..editors import Editor
+from ..editors.shell_editor import ShellEditor
 from ..models import EntryListFilter
-from ..repositories.time_entry_repo_yaml import TimeEntryRepositoryYaml
-from ..services import EditorService, TimeTrackingService, YAMLEditorService
+from ..repositories import TimeEntryRepositoryFile
+from ..services import TimeTrackingService
 
 
-class DummyEditorService(EditorService):
+class DummyEditorService(Editor):
     def edit_entry(self, entry):
         entry.comment = "edited by dummy editor"
         return entry
@@ -32,7 +34,7 @@ def test_initialization(tmp_path):
     tts = TimeTrackingService(settings=settings)
     assert tts.settings == settings
     assert tts.repository.filename == tts.settings.data_filename
-    assert isinstance(tts.editor, YAMLEditorService)
+    assert isinstance(tts.editor, ShellEditor)
     tts = TimeTrackingService(settings=settings, editor=DummyEditorService("nothing"))
     assert isinstance(tts.editor, DummyEditorService)
 
@@ -40,7 +42,7 @@ def test_initialization(tmp_path):
 def test_basic_time_tracking(tmp_path):
     filename = tmp_path / "test.yaml"
     settings = create_test_settings(tmp_path)
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename), settings=settings)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
     assert tts.list_entries() == []
     a = tts.start_tracking("test-project")
     assert a.end_time is None
@@ -59,7 +61,7 @@ def test_basic_time_tracking(tmp_path):
 def test_auto_tagging(tmp_path):
     filename = tmp_path / "test.yaml"
     settings = create_test_settings(tmp_path)
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename), settings=settings)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
 
     # Test regex matching with '^abc' pattern
     entry1 = tts.start_tracking("abc-learning-task")
@@ -101,7 +103,7 @@ def test_auto_tagging(tmp_path):
 def test_start_stop(tmp_path):
     filename = tmp_path / "test.yaml"
     settings = create_test_settings(tmp_path)
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename), settings=settings)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
 
     d1 = tts.start_tracking("test-project")
     assert d1.end_time is None
@@ -114,7 +116,7 @@ def test_start_stop(tmp_path):
 def test_filtered_list(tmp_path):
     filename = tmp_path / "test.yaml"
     settings = create_test_settings(tmp_path)
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename), settings=settings)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
 
     # Create entries with different projects and tags
     d1 = tts.start_tracking("test-project", tags={"tag1", "tag2"})
@@ -165,7 +167,7 @@ def test_filtered_list(tmp_path):
 def test_invalid_entry_fetch(tmp_path):
     filename = tmp_path / "test.yaml"
     settings = create_test_settings(tmp_path)
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename), settings=settings)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
 
     d1 = tts.start_tracking("test-project")
     assert d1.end_time is None
@@ -180,7 +182,7 @@ def test_invalid_entry_fetch(tmp_path):
 def test_delete_entry(tmp_path):
     filename = tmp_path / "test.yaml"
     settings = create_test_settings(tmp_path)
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(filename), settings=settings)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
 
     d1 = tts.start_tracking("test-project")
     assert d1.end_time is None
@@ -215,7 +217,7 @@ auto_tag_rules:
     assert settings.locale == "ko_KR"  # Verify locale override
 
     # Create service and test auto-tagging
-    tts = TimeTrackingService(repository=TimeEntryRepositoryYaml(settings.data_filename), settings=settings)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(settings.data_filename), settings=settings)
 
     entry = tts.start_tracking("test-project")
     assert "testing" in entry.tags

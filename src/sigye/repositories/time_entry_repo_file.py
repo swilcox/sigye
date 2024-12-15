@@ -1,14 +1,95 @@
+import json
 import os
+from typing import TextIO
 
-import yaml
+import rtoml as toml
+import ryaml
 
 from ..models import EntryListFilter, TimeEntry
 from .time_entry_repo import TimeEntryRepository
 
 
-class TimeEntryRepositoryYaml(TimeEntryRepository):
+class StorageFormat:
+    """Base class for file formats used in storage"""
+
+    def __init__(self, extension: str):
+        self.extension = extension
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.extension!r})"
+
+    @property
+    def suffix(self):
+        return f".{self.extension}"
+
+
+class YAMLFormat(StorageFormat):
+    """YAML file format"""
+
+    def __init__(self):
+        super().__init__("yaml")
+
+    def load_data(self, f: TextIO) -> dict:
+        return ryaml.load(f)
+
+    def save_data(self, data: dict, f: TextIO):
+        ryaml.dump(f, data)
+
+
+class TOMLFormat(StorageFormat):
+    """TOML file format"""
+
+    def __init__(self):
+        super().__init__("toml")
+
+    def load_data(self, f: TextIO) -> dict:
+        return toml.load(f)
+
+    def save_data(self, data: dict, f: TextIO):
+        toml.dump(data, f)
+
+
+class JSONFormat(StorageFormat):
+    """JSON file format"""
+
+    def __init__(self):
+        super().__init__("json")
+
+    def load_data(self, f) -> dict:
+        return json.load(f)
+
+    def save_data(self, data: dict, f):
+        json.dump(data, f)
+
+
+class FormatFactory:
+    _formats = {
+        "yaml": YAMLFormat,
+        "toml": TOMLFormat,
+        "json": JSONFormat,
+    }
+
+    @classmethod
+    def get_format(cls, extension: str) -> StorageFormat:
+        try:
+            return cls._formats[extension]()
+        except KeyError as e:
+            raise ValueError(f"Unsupported file format: {extension}") from e
+
+    @classmethod
+    def get_format_from_filename(cls, filename: str) -> StorageFormat:
+        _, ext = os.path.splitext(filename)
+        return cls.get_format(ext[1:])
+
+    @classmethod
+    def get_supported_formats(cls) -> list[str]:
+        return list(cls._formats.keys())
+
+
+class TimeEntryRepositoryFile(TimeEntryRepository):
     def __init__(self, filename: str = "timesheet.yaml"):
         self.filename = filename
+        self._format = FormatFactory.get_format_from_filename(filename)
         self._cache = None
         self._ensure_file_exists()
 
@@ -19,12 +100,12 @@ class TimeEntryRepositoryYaml(TimeEntryRepository):
     def _load_data(self) -> dict:
         if self._cache is None:
             with open(self.filename) as f:
-                self._cache = yaml.load(f, yaml.FullLoader)
+                self._cache = self._format.load_data(f)
         return self._cache
 
     def _save_data(self, data: dict):
         with open(self.filename, "w") as f:
-            yaml.dump(data, f)
+            self._format.save_data(data, f)
         self._cache = data
 
     def _invalidate_cache(self):
