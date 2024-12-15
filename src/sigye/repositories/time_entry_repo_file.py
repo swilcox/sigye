@@ -58,13 +58,14 @@ class JSONFormat(StorageFormat):
     def load_data(self, f) -> dict:
         return json.load(f)
 
-    def save_data(self, data: dict, f):
+    def save_data(self, data: dict, f: TextIO):
         json.dump(data, f)
 
 
 class FormatFactory:
     _formats = {
         "yaml": YAMLFormat,
+        "yml": YAMLFormat,
         "toml": TOMLFormat,
         "json": JSONFormat,
     }

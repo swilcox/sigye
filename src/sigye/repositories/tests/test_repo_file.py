@@ -13,6 +13,7 @@ def test_file_format_factory():
     assert isinstance(factory.get_format("yaml"), YAMLFormat)
     assert isinstance(factory.get_format("toml"), TOMLFormat)
     assert isinstance(factory.get_format("json"), JSONFormat)
+    assert isinstance(factory.get_format("yml"), YAMLFormat)
     with pytest.raises(ValueError):
         factory.get_format("unknown")
 

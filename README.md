@@ -8,7 +8,7 @@ sigye (시계 Korean for clock) is a CLI program to help you track your time. Wi
 * start (start tracking time towards a project)
 * stop (stop tracking time)
 * status (get the current status)
-* edit (edit a time entry record using the current default EDITOR)
+* edit (edit a time entry record using the current default `EDITOR` value or `nano` if you don't have `EDITOR` set in your shell)
 * list (list entries)
   * can filter entries by time range ("today", "week", "month") or fixed start and end dates.
   * can filter entries by project name(s) or a project starts with.

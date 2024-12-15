@@ -12,7 +12,7 @@ from ..output import OutputType
 DEFAULT_HOME_DIRECTORY = Path.home() / ".sigye"
 DEFAULT_HOME_DIRECTORY.mkdir(exist_ok=True, parents=True)
 DEFAULT_CONFIG_PATH = DEFAULT_HOME_DIRECTORY / "config.yaml"
-DEFAULT_DATA_FILENAME = DEFAULT_HOME_DIRECTORY / "time_entries.yml"
+DEFAULT_DATA_FILENAME = DEFAULT_HOME_DIRECTORY / "time_entries.toml"
 DEFAULT_EDITOR = os.getenv("EDITOR", "nano")
 
 
