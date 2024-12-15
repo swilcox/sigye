@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Literal, Self
 
-import yaml
+import ryaml
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,7 +13,7 @@ DEFAULT_HOME_DIRECTORY = Path.home() / ".sigye"
 DEFAULT_HOME_DIRECTORY.mkdir(exist_ok=True, parents=True)
 DEFAULT_CONFIG_PATH = DEFAULT_HOME_DIRECTORY / "config.yaml"
 DEFAULT_DATA_FILENAME = DEFAULT_HOME_DIRECTORY / "time_entries.yml"
-DEFAULT_EDITOR = os.getenv("EDITOR", "vim")
+DEFAULT_EDITOR = os.getenv("EDITOR", "nano")
 
 
 class AutoTagRule(BaseModel):
@@ -26,7 +26,8 @@ class Settings(BaseSettings):
     data_filename: str = Field(default=str(DEFAULT_DATA_FILENAME))
     locale: str = Field(default="en_US")
     auto_tag_rules: list[AutoTagRule] = []
-    editor: str = Field(default=DEFAULT_EDITOR)
+    editor: str = Field(default=DEFAULT_EDITOR)  # really the editor command in the shell
+    editor_format: str = Field(default="yaml")  # the format of the editor file
     output_format: OutputType = Field(default=OutputType.EMPTY)
 
     @classmethod
@@ -34,7 +35,7 @@ class Settings(BaseSettings):
         if not path.exists():
             return cls()
         with open(path) as f:
-            config_dict = yaml.safe_load(f)
+            config_dict = ryaml.load(f)
             return cls.model_validate(config_dict or {})
 
     def apply_auto_tags(self, project: str) -> set[str]:

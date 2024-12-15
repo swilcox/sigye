@@ -6,9 +6,10 @@ from click_aliases import ClickAliasedGroup
 from click_datetime import Datetime
 
 from .config.settings import DEFAULT_CONFIG_PATH, Settings
+from .editors import EditorError
 from .models import EntryListFilter
 from .output import OutputFormatter, OutputType, create_output_formatter, validate_output_format
-from .services import EditorServiceError, TimeTrackingService
+from .services import TimeTrackingService
 from .utils.datetime_utils import validate_time
 from .utils.translation import set_locale
 
@@ -126,7 +127,7 @@ def edit_entry(context: ContextObject, id):
         raise click.ClickException(f"Multiple records found starting with id {id}") from e
     try:
         context.output.single_entry_output(context.tts.edit_entry(entry.id))
-    except EditorServiceError as e:
+    except EditorError as e:
         raise click.ClickException(f"Error editing entry: {str(e)}") from e
 
 
@@ -160,9 +161,8 @@ def delete_entry(context: ContextObject, id):
 @click.option("--end_date", type=Datetime(format="%Y-%m-%d"), help="End date in format YYYY-MM-DD")
 @click.option("--tag", multiple=True)
 @click.option("--project", multiple=True)
-@click.option("--format")
 @pass_context_object
-def list_entries(context: ContextObject, time_period, start_date, end_date, tag, project, format):
+def list_entries(context: ContextObject, time_period, start_date, end_date, tag, project):
     """display list of time entries for a time period"""
     filter = EntryListFilter(
         time_period=time_period,
@@ -170,7 +170,6 @@ def list_entries(context: ContextObject, time_period, start_date, end_date, tag,
         end_date=end_date,
         tags=set(tag),
         projects=set(project),
-        output_format=format,
     )
     time_list = context.tts.list_entries(filter=filter)
     context.output.multiple_entries_output(time_list)
