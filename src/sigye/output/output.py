@@ -10,6 +10,7 @@ class OutputType(StrEnum):
     RICH = "rich"
     YAML = "yaml"
     MARKDOWN = "markdown"
+    CSV = "csv"
     EMPTY = ""
 
     @classmethod
