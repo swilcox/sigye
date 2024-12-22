@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
@@ -80,5 +81,13 @@ class RichTextOutput(OutputFormatter):
         _check_and_print_total(table, subtotal_delta, _("subtotal"), "#a0a0a0")
         table.add_section()
         _check_and_print_total(table, total_delta, _("total"), "yellow")
+        console = Console()
+        console.print(table)
+
+    def export_output(self, count: int, filename: Path | str) -> None:
+        table = Table(title=_("Export"))
+        table.add_column(_("records exported"))
+        table.add_column(_("filename"))
+        table.add_row(str(count), str(filename))
         console = Console()
         console.print(table)

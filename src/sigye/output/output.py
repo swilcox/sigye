@@ -1,4 +1,5 @@
 from enum import StrEnum
+from pathlib import Path
 
 from ..models import TimeEntry
 
@@ -8,6 +9,8 @@ class OutputType(StrEnum):
     JSON = "json"
     RICH = "rich"
     YAML = "yaml"
+    MARKDOWN = "markdown"
+    CSV = "csv"
     EMPTY = ""
 
     @classmethod
@@ -25,4 +28,7 @@ class OutputFormatter:
         raise NotImplementedError("output method is not implemented")
 
     def multiple_entries_output(self, entries: list[TimeEntry]) -> None:
+        raise NotImplementedError("output method is not implemented")
+
+    def export_output(self, count: int, filename: Path | str) -> None:
         raise NotImplementedError("output method is not implemented")

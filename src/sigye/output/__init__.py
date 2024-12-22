@@ -1,6 +1,8 @@
 import sys
 
+from .csv_output import CsvOutput
 from .json_output import JsonOutput
+from .markdown_output import MarkdownOutput
 from .output import OutputFormatter, OutputType
 from .output_utils import validate_output_format
 from .rich_text_output import RichTextOutput
@@ -8,6 +10,7 @@ from .text_output import RawTextOutput
 from .yaml_output import YamlOutput
 
 __all__ = [
+    CsvOutput,
     JsonOutput,
     OutputFormatter,
     OutputType,
@@ -37,4 +40,8 @@ def create_output_formatter(output_format: OutputType | None, force: bool = Fals
             return RichTextOutput()
         case OutputType.YAML:
             return YamlOutput()
+        case OutputType.MARKDOWN:
+            return MarkdownOutput()
+        case OutputType.CSV:
+            return CsvOutput()
     raise ValueError(f"Unsupported output format: {output_format}")

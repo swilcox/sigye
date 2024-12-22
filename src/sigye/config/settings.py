@@ -23,7 +23,7 @@ class AutoTagRule(BaseModel):
 
 
 class Settings(BaseSettings):
-    data_filename: str = Field(default=str(DEFAULT_DATA_FILENAME))
+    data_filename: Path = Field(default=str(DEFAULT_DATA_FILENAME))
     locale: str = Field(default="en_US")
     auto_tag_rules: list[AutoTagRule] = []
     editor: str = Field(default=DEFAULT_EDITOR)  # really the editor command in the shell

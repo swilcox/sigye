@@ -173,3 +173,12 @@ def list_entries(context: ContextObject, time_period, start_date, end_date, tag,
     )
     time_list = context.tts.list_entries(filter=filter)
     context.output.multiple_entries_output(time_list)
+
+
+@cli.command("export")
+@click.argument("export_filename", required=True, type=click.Path(path_type=Path))
+@pass_context_object
+def export(context: ContextObject, export_filename):
+    """export time entries to a file"""
+    records_exported = context.tts.export_entries(export_filename)
+    context.output.export_output(records_exported, export_filename)

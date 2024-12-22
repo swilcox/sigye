@@ -4,7 +4,7 @@ from .config.settings import Settings
 from .editors import Editor
 from .editors.shell_editor import ShellEditor
 from .models import EntryListFilter, TimeEntry
-from .repositories import TimeEntryRepository, TimeEntryRepositoryFile
+from .repositories import TimeEntryRepository, TimeEntryRepositoryFile, TimeEntryRepositoryORM
 
 
 class TimeTrackingService:
@@ -15,7 +15,11 @@ class TimeTrackingService:
         editor: Editor | None = None,
     ):
         self.settings = settings
-        self.repository = repository or TimeEntryRepositoryFile(settings.data_filename)
+        self.repository = repository or (
+            TimeEntryRepositoryORM(settings.data_filename)
+            if settings.data_filename.suffix == ".db"
+            else TimeEntryRepositoryFile(settings.data_filename)
+        )
         self.editor = editor or ShellEditor(settings.editor, settings.editor_format)
 
     def start_tracking(
@@ -91,3 +95,12 @@ class TimeTrackingService:
         elif len(entries) > 1:
             raise IndexError("Multiple entries found")
         raise KeyError("record id not found")
+
+    def export_entries(self, filename: str) -> int:
+        """Export entries to a file"""
+        entries = self.list_entries()
+        output_repository = (
+            TimeEntryRepositoryFile(filename) if filename.suffix != ".db" else TimeEntryRepositoryORM(filename)
+        )
+        output_repository.save_all(entries)
+        return len(entries)

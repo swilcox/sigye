@@ -232,3 +232,34 @@ def test_edit_command(tmp_path):
     d1 = tts.edit_entry(d1.id)
     d1 = tts.get_entry(d1.id)
     assert d1.comment == "edited by dummy editor"
+
+
+def test_export(tmp_path):
+    filename = tmp_path / "test.yaml"
+    export_filename = tmp_path / "export.toml"
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
+
+    # Create entries with different projects and tags
+    d1 = tts.start_tracking("test-project", tags={"tag1", "tag2"})
+    tts.stop_tracking()
+    d2 = tts.start_tracking("test-project-2", tags={"tag2", "tag3"})
+    tts.stop_tracking()
+    d3 = tts.start_tracking("test-project-3", tags={"tag1", "tag3"})
+    tts.stop_tracking()
+    assert all(entry is not None for entry in [d1, d2, d3])
+
+    # Export entries
+    entry_count = tts.export_entries(export_filename)
+    assert entry_count == 3
+
+    # Verify exported file
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(export_filename), settings=settings)
+    entries = tts.list_entries()
+    assert len(entries) == 3
+    assert all(e.project in {"test-project", "test-project-2", "test-project-3"} for e in entries)
+
+    # Verify exported file using sqlite.db
+    export_filename = tmp_path / "export.db"
+    entry_count = tts.export_entries(export_filename)
+    assert entry_count == 3

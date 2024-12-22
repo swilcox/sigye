@@ -163,7 +163,7 @@ class TimeEntryRepositoryFile(TimeEntryRepository):
             (not filter.projects or self._project_matching(filter.projects, entry.project)),
             # Date filters
             (not filter.start_date or entry.start_time.date() >= filter.start_date),
-            (not filter.end_date or (entry.end_time and entry.end_time.date() <= filter.end_date)),
+            (not filter.end_date or (entry.start_time.date() <= filter.end_date)),
             # Tag filter
             (not filter.tags or any(tag in entry.tags for tag in filter.tags)),
         ]
@@ -192,4 +192,9 @@ class TimeEntryRepositoryFile(TimeEntryRepository):
         # Sort entries by start_time before saving
         entries.sort(key=lambda x: x["start_time"])
         data["entries"] = entries
+        self._save_data(data)
+
+    def save_all(self, entries: list[TimeEntry]) -> None:
+        data = self._load_data()
+        data["entries"] = [entry.model_dump(mode="json") for entry in entries]
         self._save_data(data)
