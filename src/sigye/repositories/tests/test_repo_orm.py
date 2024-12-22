@@ -71,3 +71,23 @@ def test_entry_repo_orm_delete():
     assert repo.get_all() == []
     with pytest.raises(KeyError):
         repo.delete_entry("test")
+
+
+def test_entry_repo_orm_save_all():
+    repo = TimeEntryRepositoryORM(":memory:")
+    entry1 = TimeEntry(
+        project="test",
+        start_time="2021-01-01T00:00:00",
+        stop_time="2021-01-01T01:00:00",
+        tags=["tag1", "tag2"],
+        comment="test",
+    )
+    entry2 = TimeEntry(
+        project="test2",
+        start_time="2021-01-02T00:00:00",
+        stop_time="2021-01-02T01:00:00",
+        tags=["tag2", "tag3"],
+        comment="test2",
+    )
+    repo.save_all([entry1, entry2])
+    assert repo.get_all() == [entry1, entry2]

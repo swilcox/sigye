@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import ryaml
 
 from ..models import TimeEntry
@@ -12,3 +14,6 @@ class YamlOutput(OutputFormatter):
 
     def multiple_entries_output(self, entries: list[TimeEntry]) -> None:
         print(ryaml.dumps({"entries": [entry.model_dump(mode="json") for entry in entries]}))
+
+    def export_output(self, count: int, filename: Path | str) -> None:
+        print("")

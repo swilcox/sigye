@@ -101,3 +101,8 @@ class TimeEntryRepositoryORM(TimeEntryRepository):
         except TimeEntryORM.DoesNotExist:
             orm_entry = TimeEntryORM.create_from_model(entry)
         orm_entry.save()
+
+    def save_all(self, entries: list[TimeEntry]) -> None:
+        with db.atomic():
+            data = [entry.model_dump(mode="json") for entry in entries]
+            TimeEntryORM.insert_many(data).execute()

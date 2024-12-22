@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from ..models import TimeEntry
 from .output import OutputFormatter
 
@@ -15,3 +17,6 @@ class RawTextOutput(OutputFormatter):
     def multiple_entries_output(self, entries: list[TimeEntry]) -> None:
         for entry in entries:
             print(self._entry_to_str(entry))
+
+    def export_output(self, count: int, filename: Path | str) -> None:
+        return print(f"Exported {count} entries to {filename}")

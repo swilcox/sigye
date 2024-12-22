@@ -193,3 +193,8 @@ class TimeEntryRepositoryFile(TimeEntryRepository):
         entries.sort(key=lambda x: x["start_time"])
         data["entries"] = entries
         self._save_data(data)
+
+    def save_all(self, entries: list[TimeEntry]) -> None:
+        data = self._load_data()
+        data["entries"] = [entry.model_dump(mode="json") for entry in entries]
+        self._save_data(data)

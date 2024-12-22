@@ -95,3 +95,12 @@ class TimeTrackingService:
         elif len(entries) > 1:
             raise IndexError("Multiple entries found")
         raise KeyError("record id not found")
+
+    def export_entries(self, filename: str) -> int:
+        """Export entries to a file"""
+        entries = self.list_entries()
+        output_repository = (
+            TimeEntryRepositoryFile(filename) if filename.suffix != ".db" else TimeEntryRepositoryORM(filename)
+        )
+        output_repository.save_all(entries)
+        return len(entries)

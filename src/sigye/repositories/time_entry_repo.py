@@ -5,7 +5,7 @@ from ..models import EntryListFilter, TimeEntry
 
 class TimeEntryRepository(ABC):
     @abstractmethod
-    def save(self, entry: TimeEntry) -> TimeEntry:
+    def save(self, entry: TimeEntry) -> None:
         pass
 
     @abstractmethod
@@ -21,7 +21,7 @@ class TimeEntryRepository(ABC):
         pass
 
     @abstractmethod
-    def filter(self, *, filter: EntryListFilter):
+    def filter(self, *, filter: EntryListFilter) -> list[TimeEntry]:
         pass
 
     @abstractmethod
@@ -30,4 +30,8 @@ class TimeEntryRepository(ABC):
 
     @abstractmethod
     def delete_entry(self, id: str) -> TimeEntry:
+        pass
+
+    @abstractmethod
+    def save_all(self, entries: list[TimeEntry]) -> None:
         pass

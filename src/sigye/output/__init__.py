@@ -1,6 +1,7 @@
 import sys
 
 from .json_output import JsonOutput
+from .markdown_output import MarkdownOutput
 from .output import OutputFormatter, OutputType
 from .output_utils import validate_output_format
 from .rich_text_output import RichTextOutput
@@ -37,4 +38,6 @@ def create_output_formatter(output_format: OutputType | None, force: bool = Fals
             return RichTextOutput()
         case OutputType.YAML:
             return YamlOutput()
+        case OutputType.MARKDOWN:
+            return MarkdownOutput()
     raise ValueError(f"Unsupported output format: {output_format}")
