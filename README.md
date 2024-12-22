@@ -31,7 +31,7 @@ pipx install sigye
 ## Usage
 
 ### Default Storage of Entries
-By default, entries are stored in a YAML file at: `$HOME/.sigye/time_entries.toml`
+By default, entries are stored in a TOML file at: `$HOME/.sigye/time_entries.toml`
 
 To override this value, you can add `--filename <date_filename>` on every command to override adhoc.
 
@@ -41,6 +41,19 @@ Or better yet, set the `data_filename` in the config.yaml file.
 
 > [!IMPORTANT]  
 > Make sure the directory exists before overriding.
+
+### Storage options
+The following formats are available for storage:
+* Text File:
+  * TOML (default)
+  * YAML
+  * JSON
+* SqliteDB:
+  * has the .db filename extension
+
+> [!WARNING]
+> The SqliteDB storage method is experimental and subject to change (re: table schema).
+> Performance of the file-based storage is surprisingly good for most uses. Tests up to 6,000 entries still seem performant *enough* for most uses. But for those with slower computers and large numbers of entries, the sqlite storage solution might be better.
 
 ### Start tracking
 ```shell
@@ -106,6 +119,8 @@ Valid options are:
 * `text` -- an extremely plain output mostly used for testing.
 * `json` -- output in JSON format. This is the default if no option is provided and `stdout` is redirected.
 * `yaml` -- output in YAML format, suitable for exporting entries to a new file.
+* `csv` -- output in CSV format, suitable for exporting to a CSV file and then importing into a spreadsheet.
+* `markdown` -- output in markdown (md) format. You can then redirect to a tool like [glow](https://github.com/charmbracelet/glow) or to a file or tool that transforms markdown to html and/or pdf.
 
 Example:
 
@@ -120,6 +135,16 @@ To edit an entry, use the full or partial ID (just has to be enough digits for i
 ```shell
 sigye edit ID
 ```
+
+### Export Entries
+
+If you need to export all entries to another format or a different file, this allows you to do that:
+
+```shell
+sigye export my_exported.db
+```
+
+The above example would export the currently configured time entry storage to a file called `my_exported.db` (which implies SQLite). The system will automatically adjust based on the filename extension (e.g. yaml, toml, json, etc). Only the currently supported storage engine formats will work.
 
 ## Configuration
 
@@ -161,7 +186,7 @@ To get *output* in Korean:
 The `sigye list` and `sigye status` commands will now output some information in Korean.
 
 > [!NOTE]
-> This work is ongoing and subject to change.
+> This work is ongoing and subject to change. Currently localization doesn't work correctly with markdown, csv or other optional output methods.
 
 ## Development
 
@@ -177,9 +202,9 @@ uv run pytest
 
 ## Future Changes
 
-* Configuration file support
-  * YAML (mostly complete now)
-  * TOML
-* Language Localization (in-progress)
-* SQLite storage
-* TOML storage
+* [ ] Configuration file support
+  * [x] YAML (mostly complete now)
+  * [ ] TOML
+* [ ] Language Localization (in-progress)
+* [x] SQLite storage
+* [x] TOML storage
