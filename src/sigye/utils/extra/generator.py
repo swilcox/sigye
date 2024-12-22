@@ -2,7 +2,7 @@ import random
 from datetime import datetime, timedelta
 
 from ...models import TimeEntry
-from ...repositories import TimeEntryRepositoryFile
+from ...repositories import TimeEntryRepositoryFile, TimeEntryRepositoryORM
 
 
 def generate_fake_entries(count: int) -> list[TimeEntry]:
@@ -27,11 +27,11 @@ def generate_fake_entries(count: int) -> list[TimeEntry]:
 def save_fake_entries(filename: str, count: int):
     """Generate and save fake time entries to a file"""
     entries = generate_fake_entries(count)
-    repo = TimeEntryRepositoryFile(filename)
+    repo = TimeEntryRepositoryORM(filename) if filename.endswith(".db") else TimeEntryRepositoryFile(filename)
     for entry in entries:
         repo.save(entry)
     return entries
 
 
 if __name__ == "__main__":
-    save_fake_entries("fake_entries.yaml", 1000)
+    save_fake_entries("fake_entries.db", 1000)

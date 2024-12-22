@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import mock
 
 from click.testing import CliRunner
@@ -25,7 +26,7 @@ def test_load_settings(tmp_path):
     config_file.write_text(config_content)
     settings = load_settings(config_file)
     assert settings.locale == "en_US"
-    assert settings.data_filename == "test.yaml"
+    assert settings.data_filename == Path("test.yaml")
 
 
 def test_start_command(tmp_path):

@@ -163,7 +163,7 @@ class TimeEntryRepositoryFile(TimeEntryRepository):
             (not filter.projects or self._project_matching(filter.projects, entry.project)),
             # Date filters
             (not filter.start_date or entry.start_time.date() >= filter.start_date),
-            (not filter.end_date or (entry.end_time and entry.end_time.date() <= filter.end_date)),
+            (not filter.end_date or (entry.start_time.date() <= filter.end_date)),
             # Tag filter
             (not filter.tags or any(tag in entry.tags for tag in filter.tags)),
         ]
