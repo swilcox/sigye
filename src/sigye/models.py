@@ -1,10 +1,10 @@
 from datetime import date, datetime, timedelta
-from typing import Literal
+from typing import Literal, Self
 from uuid import uuid4
 
 import humanize
 import humanize.i18n
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class TimeEntry(BaseModel):
@@ -14,6 +14,12 @@ class TimeEntry(BaseModel):
     project: str
     tags: set[str] = Field(default_factory=set)
     comment: str = ""
+
+    @model_validator(mode="after")
+    def check_times_valid(self) -> Self:
+        if self.end_time and self.end_time < self.start_time:
+            raise ValueError("end time is before start time")
+        return self
 
     @property
     def humanized_duration(self):
@@ -44,6 +50,7 @@ class TimeEntry(BaseModel):
             self.end_time = end_time or datetime.now().astimezone()
         else:
             raise ValueError("already stopped")
+        self.__class__.model_validate(self.model_dump())
 
     @property
     def duration(self):

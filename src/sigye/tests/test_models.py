@@ -85,3 +85,10 @@ def test_entry_list_filter_tags():
     assert len(filter.tags) == 2
     assert "tag1" in filter.tags
     assert "tag2" in filter.tags
+
+
+def test_bad_stop_time():
+    now = datetime.now().astimezone()
+    t1 = TimeEntry(start_time=now + timedelta(hours=-4), project="test-project", comment="hello")
+    with pytest.raises(ValueError):
+        t1.stop(now + timedelta(hours=-5))
