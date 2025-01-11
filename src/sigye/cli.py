@@ -98,11 +98,14 @@ def start(context: ContextObject, project, comment, tag, start_time):
 @pass_context_object
 def stop(context: ContextObject, comment, stop_time):
     """stop tracking work on a project"""
-    if comment:
-        time_entry = context.tts.get_active_entry()
-        time_entry.comment = comment
-        time_entry = context.tts.update_entry(time_entry)
-    time_entry = context.tts.stop_tracking(stop_time=stop_time)
+    try:
+        if comment:
+            time_entry = context.tts.get_active_entry()
+            time_entry.comment = comment
+            time_entry = context.tts.update_entry(time_entry)
+        time_entry = context.tts.stop_tracking(stop_time=stop_time)
+    except ValueError as e:
+        raise click.ClickException(e) from e
     context.output.single_entry_output(time_entry)
 
 
