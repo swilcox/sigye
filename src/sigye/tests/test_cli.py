@@ -83,13 +83,14 @@ def test_stop_command(tmp_path):
         assert "test-project" in result.output
 
         # Stop with specific time
-        runner.invoke(cli, ["-f", "test.yaml", "start", "test-project"])
-        result = runner.invoke(cli, ["-f", "test.yaml", "stop", "--stop_time", "17:00"])
+        runner.invoke(cli, ["-f", "test2.yaml", "start", "test-project", "--start_time", "09:00"])
+        result = runner.invoke(cli, ["-f", "test2.yaml", "stop", "--stop_time", "17:00"])
         assert result.exit_code == 0
         assert "17:00" in result.output
 
         # Invalid time format
-        result = runner.invoke(cli, ["-f", "test.yaml", "stop", "--stop_time", "invalid"])
+        runner.invoke(cli, ["-f", "test3.yaml", "start", "test-project", "--start_time", "09:00"])
+        result = runner.invoke(cli, ["-f", "test3.yaml", "stop", "--stop_time", "invalid"])
         assert result.exit_code != 0
         assert "Invalid time format" in result.output
 
