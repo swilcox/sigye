@@ -263,3 +263,115 @@ def test_export(tmp_path):
     export_filename = tmp_path / "export.db"
     entry_count = tts.export_entries(export_filename)
     assert entry_count == 3
+
+
+def test_default_list_with_active_entry_from_previous_date(tmp_path):
+    """Test that default list shows today's entries plus active entry from previous date"""
+    from ..models import TimeEntry
+
+    filename = tmp_path / "test.yaml"
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
+
+    now = datetime.now().astimezone()
+    yesterday = now - timedelta(days=1)
+    two_days_ago = now - timedelta(days=2)
+
+    # Create a completed entry from two days ago
+    two_days_entry = TimeEntry(
+        project="two-days-project", start_time=two_days_ago, end_time=two_days_ago + timedelta(hours=2)
+    )
+    tts.repository.save(two_days_entry)
+
+    # Create an active entry from yesterday (still running - no end_time)
+    yesterday_active = TimeEntry(project="yesterday-project", start_time=yesterday)
+    tts.repository.save(yesterday_active)
+
+    # Create completed entries for today
+    today_entry1 = TimeEntry(project="today-project-1", start_time=now, end_time=now + timedelta(hours=1))
+    tts.repository.save(today_entry1)
+
+    today_entry2 = TimeEntry(
+        project="today-project-2", start_time=now + timedelta(hours=2), end_time=now + timedelta(hours=3)
+    )
+    tts.repository.save(today_entry2)
+
+    # Test default list (time_period="")
+    # Should show: yesterday's active entry + today's entries (not the two-days-ago entry)
+    default_filter = EntryListFilter(time_period="")
+    entries = tts.list_entries(filter=default_filter)
+    assert len(entries) == 3
+    entry_ids = {e.id for e in entries}
+    assert yesterday_active.id in entry_ids
+    assert today_entry1.id in entry_ids
+    assert today_entry2.id in entry_ids
+    assert two_days_entry.id not in entry_ids
+
+    # Test "all" time period - should show everything
+    all_filter = EntryListFilter(time_period="all")
+    all_entries = tts.list_entries(filter=all_filter)
+    assert len(all_entries) == 4
+
+
+def test_default_list_without_active_entry_from_previous_date(tmp_path):
+    """Test that default list shows only today's entries when there's no active entry from previous date"""
+    filename = tmp_path / "test.yaml"
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
+
+    now = datetime.now().astimezone()
+    yesterday = now - timedelta(days=1)
+
+    # Create a completed entry from yesterday
+    yesterday_entry = tts.start_tracking("yesterday-project", start_time=yesterday)
+    tts.stop_tracking(stop_time=yesterday + timedelta(hours=2))
+
+    # Create today's entries
+    today_entry1 = tts.start_tracking("today-project-1")
+    tts.stop_tracking()
+    today_entry2 = tts.start_tracking("today-project-2")
+    tts.stop_tracking()
+
+    # Test default list (time_period="")
+    # Should show only today's entries (yesterday's is completed, not active)
+    default_filter = EntryListFilter(time_period="")
+    entries = tts.list_entries(filter=default_filter)
+    assert len(entries) == 2
+    entry_ids = {e.id for e in entries}
+    assert today_entry1.id in entry_ids
+    assert today_entry2.id in entry_ids
+    assert yesterday_entry.id not in entry_ids
+
+    # Test "all" time period - should show everything
+    all_filter = EntryListFilter(time_period="all")
+    all_entries = tts.list_entries(filter=all_filter)
+    assert len(all_entries) == 3
+
+
+def test_default_list_with_active_entry_from_today(tmp_path):
+    """Test that default list shows today's entries when active entry is from today"""
+    filename = tmp_path / "test.yaml"
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
+
+    now = datetime.now().astimezone()
+    yesterday = now - timedelta(days=1)
+
+    # Create a completed entry from yesterday
+    yesterday_entry = tts.start_tracking("yesterday-project", start_time=yesterday)
+    tts.stop_tracking(stop_time=yesterday + timedelta(hours=2))
+
+    # Create today's entries, including one that's still active
+    today_entry1 = tts.start_tracking("today-project-1")
+    tts.stop_tracking()
+    today_active = tts.start_tracking("today-project-active")  # Still active
+
+    # Test default list (time_period="")
+    # Should show only today's entries (active entry is from today, not a previous date)
+    default_filter = EntryListFilter(time_period="")
+    entries = tts.list_entries(filter=default_filter)
+    assert len(entries) == 2
+    entry_ids = {e.id for e in entries}
+    assert today_entry1.id in entry_ids
+    assert today_active.id in entry_ids
+    assert yesterday_entry.id not in entry_ids
