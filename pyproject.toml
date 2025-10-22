@@ -1,6 +1,6 @@
 [project]
 name = "sigye"
-version = "0.10.1"
+version = "0.10.2"
 description = "(시계) A simple command-line program for tracking time."
 readme = "README.md"
 license = { text = "MIT License" }
@@ -14,7 +14,7 @@ dependencies = [
     "rich>=13.9.4",
     "click-aliases>=1.0.5",
     "click-datetime>=0.4.0",
-    "rtoml>=0.12.0",
+    "rtoml>=0.13.0",
     "ryaml>=0.4.0",
     "peewee>=3.17.8",
     "jinja2>=3.1.5",
