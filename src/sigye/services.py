@@ -64,6 +64,20 @@ class TimeTrackingService:
     def list_entries(self, filter: EntryListFilter | None = None) -> list[TimeEntry]:
         """List time entries based on filter"""
         if filter:
+            # Handle default behavior: show today's entries plus any active entry from a previous date
+            if filter.time_period == "" and not filter.start_date and not filter.end_date:
+                active_entry = self.repository.get_active_entry()
+                today = datetime.now().date()
+
+                # If there's an active entry from a previous date, include that date
+                if active_entry and active_entry.start_time.date() < today:
+                    filter.start_date = active_entry.start_time.date()
+                    filter.end_date = today
+                else:
+                    # Otherwise, just show today
+                    filter.start_date = today
+                    filter.end_date = today
+
             return self.repository.filter(filter=filter)
         return self.repository.get_all()
 

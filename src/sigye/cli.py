@@ -166,7 +166,11 @@ def delete_entry(context: ContextObject, id):
 @click.option("--project", multiple=True)
 @pass_context_object
 def list_entries(context: ContextObject, time_period, start_date, end_date, tag, project):
-    """display list of time entries for a time period"""
+    """display list of time entries for a time period
+
+    Default behavior (no time_period): shows today's entries, plus any active entry from a previous date.
+    Use 'all' to display all time entries.
+    """
     filter = EntryListFilter(
         time_period=time_period,
         start_date=start_date,
