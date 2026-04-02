@@ -3,7 +3,6 @@ from pathlib import Path
 
 import click
 from click_aliases import ClickAliasedGroup
-from click_datetime import Datetime
 
 from .config.settings import DEFAULT_CONFIG_PATH, Settings
 from .editors import EditorError
@@ -158,10 +157,10 @@ def delete_entry(context: ContextObject, id):
 )
 @click.option(
     "--start_date",
-    type=Datetime(format="%Y-%m-%d"),
+    type=click.DateTime(formats=["%Y-%m-%d"]),
     help="Start date in format YYYY-MM-DD",
 )
-@click.option("--end_date", type=Datetime(format="%Y-%m-%d"), help="End date in format YYYY-MM-DD")
+@click.option("--end_date", type=click.DateTime(formats=["%Y-%m-%d"]), help="End date in format YYYY-MM-DD")
 @click.option("--tag", multiple=True)
 @click.option("--project", multiple=True)
 @pass_context_object

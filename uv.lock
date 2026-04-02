@@ -36,19 +36,6 @@ wheels = [
 ]
 
 [[package]]
-name = "click-datetime"
-version = "0.4.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "wheel" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/d1/482109cb5e29fef3bc77a129b58c3421432c6b839eb1e052f5ecc759aefd/click_datetime-0.4.0.tar.gz", hash = "sha256:9f35ed3fab13f553221ce8c5a895e5185d7360993c51dd7f8628b9b4f636930b", size = 1729, upload-time = "2024-09-09T23:41:45.518Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c9/aa/3272aefc8d18b14ba7fe6c34ca683bb9a13f05d6280be9839e139b14ea92/click_datetime-0.4.0-py3-none-any.whl", hash = "sha256:dfd2f54142f0f899535e400946d724cc8319b4cf70d110d1451f892a6f010b04", size = 2093, upload-time = "2024-09-09T23:41:43.796Z" },
-]
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -578,7 +565,6 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "click-aliases" },
-    { name = "click-datetime" },
     { name = "humanize" },
     { name = "jinja2" },
     { name = "peewee" },
@@ -601,7 +587,6 @@ dev = [
 requires-dist = [
     { name = "click", specifier = ">=8.1.7" },
     { name = "click-aliases", specifier = ">=1.0.5" },
-    { name = "click-datetime", specifier = ">=0.4.0" },
     { name = "humanize", specifier = ">=4.11.0" },
     { name = "jinja2", specifier = ">=3.1.5" },
     { name = "peewee", specifier = ">=3.17.8" },
@@ -648,13 +633,4 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/55/e3/70399cb7dd41c10ac53367ae42139cf4b1ca5f36bb3dc6c9d33acdb43655/typing_inspection-0.4.2.tar.gz", hash = "sha256:ba561c48a67c5958007083d386c3295464928b01faa735ab8547c5692e87f464", size = 75949, upload-time = "2025-10-01T02:14:41.687Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dc/9b/47798a6c91d8bdb567fe2698fe81e0c6b7cb7ef4d13da4114b41d239f65d/typing_inspection-0.4.2-py3-none-any.whl", hash = "sha256:4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7", size = 14611, upload-time = "2025-10-01T02:14:40.154Z" },
-]
-
-[[package]]
-name = "wheel"
-version = "0.44.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b7/a0/95e9e962c5fd9da11c1e28aa4c0d8210ab277b1ada951d2aee336b505813/wheel-0.44.0.tar.gz", hash = "sha256:a29c3f2817e95ab89aa4660681ad547c0e9547f20e75b0562fe7723c9a2a9d49", size = 100733, upload-time = "2024-08-04T14:55:12.29Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/d1/9babe2ccaecff775992753d8686970b1e2755d21c8a63be73aba7a4e7d77/wheel-0.44.0-py3-none-any.whl", hash = "sha256:2376a90c98cc337d18623527a97c31797bd02bad0033d41547043a1cbfbe448f", size = 67059, upload-time = "2024-08-04T14:55:10.487Z" },
 ]
