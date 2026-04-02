@@ -2,13 +2,13 @@ import json
 from datetime import datetime
 from typing import Self
 
-from peewee import CharField, DateTimeField, Model, fn
-from playhouse.sqlite_ext import JSONField, SqliteExtDatabase
+from peewee import CharField, DateTimeField, Model, SqliteDatabase, fn
+from playhouse.sqlite_ext import JSONField
 
 from ..models import EntryListFilter, TimeEntry
 from .time_entry_repo import TimeEntryRepository
 
-db = SqliteExtDatabase(None)
+db = SqliteDatabase(None)
 
 
 class TimeEntryORM(Model):
