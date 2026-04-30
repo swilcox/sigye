@@ -273,26 +273,31 @@ def test_default_list_with_active_entry_from_previous_date(tmp_path):
     settings = create_test_settings(tmp_path)
     tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
 
-    now = datetime.now().astimezone()
-    yesterday = now - timedelta(days=1)
-    two_days_ago = now - timedelta(days=2)
+    # Anchor at 10:00 local time so hour offsets stay within the same calendar day
+    today_anchor = datetime.now().astimezone().replace(hour=10, minute=0, second=0, microsecond=0)
+    yesterday_anchor = today_anchor - timedelta(days=1)
+    two_days_anchor = today_anchor - timedelta(days=2)
 
     # Create a completed entry from two days ago
     two_days_entry = TimeEntry(
-        project="two-days-project", start_time=two_days_ago, end_time=two_days_ago + timedelta(hours=2)
+        project="two-days-project", start_time=two_days_anchor, end_time=two_days_anchor + timedelta(hours=2)
     )
     tts.repository.save(two_days_entry)
 
     # Create an active entry from yesterday (still running - no end_time)
-    yesterday_active = TimeEntry(project="yesterday-project", start_time=yesterday)
+    yesterday_active = TimeEntry(project="yesterday-project", start_time=yesterday_anchor)
     tts.repository.save(yesterday_active)
 
     # Create completed entries for today
-    today_entry1 = TimeEntry(project="today-project-1", start_time=now, end_time=now + timedelta(hours=1))
+    today_entry1 = TimeEntry(
+        project="today-project-1", start_time=today_anchor, end_time=today_anchor + timedelta(hours=1)
+    )
     tts.repository.save(today_entry1)
 
     today_entry2 = TimeEntry(
-        project="today-project-2", start_time=now + timedelta(hours=2), end_time=now + timedelta(hours=3)
+        project="today-project-2",
+        start_time=today_anchor + timedelta(hours=2),
+        end_time=today_anchor + timedelta(hours=3),
     )
     tts.repository.save(today_entry2)
 
