@@ -7,12 +7,11 @@ license = { text = "MIT License" }
 authors = [{ name = "swilcox", email = "steven@wilcox.be" }]
 requires-python = ">=3.12"
 dependencies = [
-    "click>=8.1.7",
+    "cappa>=0.28",
     "humanize>=4.11.0",
     "pydantic-settings>=2.6.1",
     "pydantic>=2.9.2",
     "rich>=13.9.4",
-    "click-aliases>=1.0.5",
     "rtoml>=0.13.0",
     "ryaml>=0.4.0",
     "peewee>=3.17.8",
@@ -53,3 +52,6 @@ select = [
     "I",
 ]
 extend-fixable = ["E", "F", "UP", "B", "SIM", "I"]
+
+[tool.uv.sources]
+cappa = { git = "https://github.com/swilcox/cappa.git", rev = "feat/aliased-subcommands" }
