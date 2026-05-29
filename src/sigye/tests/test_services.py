@@ -113,6 +113,44 @@ def test_start_stop(tmp_path):
     assert d1.end_time is not None
 
 
+def test_stop_tracking_infers_prior_day_for_stale_active_entry(tmp_path):
+    """Stopping an entry left running from a prior day with a bare time-of-day
+    should land on the entry's start date, not today."""
+    filename = tmp_path / "test.yaml"
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
+
+    now = datetime.now().astimezone()
+    start = (now - timedelta(days=1)).replace(hour=9, minute=0, second=0, microsecond=0)
+
+    entry = tts.start_tracking("stale-project", start_time=start)
+    assert entry.end_time is None
+
+    # Simulate `sigye stop -s 17:00`: parse_time stamps 17:00 onto today.
+    requested_stop = now.replace(hour=17, minute=0, second=0, microsecond=0)
+    stopped = tts.stop_tracking(stop_time=requested_stop)
+
+    assert stopped.end_time.date() == start.date()
+    assert stopped.end_time.hour == 17
+    assert stopped.duration == timedelta(hours=8)
+
+
+def test_stop_tracking_keeps_today_for_active_entry_from_today(tmp_path):
+    """Stopping a same-day entry must not have its date reinterpreted."""
+    filename = tmp_path / "test.yaml"
+    settings = create_test_settings(tmp_path)
+    tts = TimeTrackingService(repository=TimeEntryRepositoryFile(filename), settings=settings)
+
+    now = datetime.now().astimezone()
+    start = now.replace(hour=9, minute=0, second=0, microsecond=0)
+
+    tts.start_tracking("today-project", start_time=start)
+    requested_stop = now.replace(hour=17, minute=0, second=0, microsecond=0)
+    stopped = tts.stop_tracking(stop_time=requested_stop)
+
+    assert stopped.end_time == requested_stop
+
+
 def test_filtered_list(tmp_path):
     filename = tmp_path / "test.yaml"
     settings = create_test_settings(tmp_path)

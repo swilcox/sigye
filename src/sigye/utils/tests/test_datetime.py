@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from freezegun import freeze_time
 
-from ..datetime_utils import format_delta, parse_time
+from ..datetime_utils import adjust_stop_time, format_delta, parse_time
 
 
 @freeze_time("2021-01-01")
@@ -45,6 +45,36 @@ def test_parse_time():
         parse_time("13:00:00 AM")
     with pytest.raises(ValueError):
         parse_time("13:00:00 PM")
+
+
+def test_adjust_stop_time_prior_day():
+    # Active entry started yesterday morning; a bare "17:00" parsed as today
+    # should be pulled back to the entry's start date.
+    start = datetime(2021, 1, 1, 9, 0).astimezone()
+    today_stop = datetime(2021, 1, 2, 17, 0).astimezone()
+    assert adjust_stop_time(start, today_stop) == datetime(2021, 1, 1, 17, 0).astimezone()
+
+
+def test_adjust_stop_time_multiple_days_prior():
+    # The start date is used even when the entry is several days stale.
+    start = datetime(2021, 1, 1, 9, 0).astimezone()
+    today_stop = datetime(2021, 1, 4, 17, 0).astimezone()
+    assert adjust_stop_time(start, today_stop) == datetime(2021, 1, 1, 17, 0).astimezone()
+
+
+def test_adjust_stop_time_same_day_unchanged():
+    # When the entry started today, the stop time is left untouched.
+    start = datetime(2021, 1, 2, 9, 0).astimezone()
+    stop = datetime(2021, 1, 2, 17, 0).astimezone()
+    assert adjust_stop_time(start, stop) == stop
+
+
+def test_adjust_stop_time_before_start_falls_back():
+    # If the stop time-of-day is before the start time-of-day, pulling it back to
+    # the start date would be invalid, so the original (today) value is kept.
+    start = datetime(2021, 1, 1, 18, 0).astimezone()
+    today_stop = datetime(2021, 1, 2, 17, 0).astimezone()
+    assert adjust_stop_time(start, today_stop) == today_stop
 
 
 def test_format_timedelta():

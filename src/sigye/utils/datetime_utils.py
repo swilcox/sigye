@@ -41,6 +41,22 @@ def parse_time(time_str: str) -> datetime:
     return datetime.combine(today, time(hours, minutes, seconds)).astimezone()
 
 
+def adjust_stop_time(start_time: datetime, stop_time: datetime) -> datetime:
+    """Reinterpret a bare time-of-day stop time against the active entry's start date.
+
+    A stop time entered as just a time of day (e.g. ``17:00``) is parsed against
+    today's date. When the active entry was actually started on an earlier day -- the
+    common "forgot to run ``sigye stop`` before leaving" case -- assume the user meant
+    that time on the entry's start date instead of today, as long as it still falls
+    after the start time. Otherwise the original stop time is returned unchanged.
+    """
+    if start_time.date() < stop_time.date():
+        candidate = datetime.combine(start_time.date(), stop_time.timetz())
+        if candidate > start_time:
+            return candidate
+    return stop_time
+
+
 def validate_time(ctx: click.Context, param: click.Parameter, value: str | None) -> datetime | None:
     if value is None:
         return None
