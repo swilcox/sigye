@@ -11,3 +11,6 @@ wheels/
 
 .python-version
 .coverage
+
+# Claude Code
+.claude/
