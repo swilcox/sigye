@@ -5,6 +5,7 @@ from .editors import Editor
 from .editors.shell_editor import ShellEditor
 from .models import EntryListFilter, TimeEntry
 from .repositories import TimeEntryRepository, TimeEntryRepositoryFile, TimeEntryRepositoryORM
+from .utils.datetime_utils import adjust_stop_time
 
 
 class TimeTrackingService:
@@ -52,6 +53,8 @@ class TimeTrackingService:
         """Stop the active time entry"""
         active_entry = self.repository.get_active_entry()
         if active_entry:
+            if stop_time is not None:
+                stop_time = adjust_stop_time(active_entry.start_time, stop_time)
             active_entry.stop(stop_time)
             self.repository.save(active_entry)
             return active_entry
