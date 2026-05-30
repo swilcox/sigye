@@ -54,4 +54,4 @@ select = [
 extend-fixable = ["E", "F", "UP", "B", "SIM", "I"]
 
 [tool.uv.sources]
-cappa = { git = "https://github.com/swilcox/cappa.git", rev = "feat/aliased-subcommands" }
+cappa = { git = "https://github.com/DanCardin/cappa.git", branch = "main" }

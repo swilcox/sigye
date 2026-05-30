@@ -17,8 +17,8 @@ wheels = [
 
 [[package]]
 name = "cappa"
-version = "0.31.1"
-source = { git = "https://github.com/swilcox/cappa.git?rev=feat%2Faliased-subcommands#0ba3eb2ed0188b72896234fcfe03c5116b18741c" }
+version = "0.32.0"
+source = { git = "https://github.com/DanCardin/cappa.git?branch=main#07154bbb8b48b4e6822c98619549b335428b4d83" }
 dependencies = [
     { name = "rich" },
     { name = "type-lens" },
@@ -574,7 +574,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cappa", git = "https://github.com/swilcox/cappa.git?rev=feat%2Faliased-subcommands" },
+    { name = "cappa", git = "https://github.com/DanCardin/cappa.git?branch=main" },
     { name = "humanize", specifier = ">=4.11.0" },
     { name = "jinja2", specifier = ">=3.1.5" },
     { name = "peewee", specifier = ">=3.17.8" },
