@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, time, timedelta
 
-import click
+import cappa
 import humanize
 
 
@@ -57,13 +57,13 @@ def adjust_stop_time(start_time: datetime, stop_time: datetime) -> datetime:
     return stop_time
 
 
-def validate_time(ctx: click.Context, param: click.Parameter, value: str | None) -> datetime | None:
+def validate_time(value: str | None) -> datetime | None:
     if value is None:
         return None
     try:
         return parse_time(value)
     except ValueError as ex:
-        raise click.BadParameter(str(ex)) from ex
+        raise cappa.Exit(str(ex), code=2) from ex
 
 
 def format_delta(td: timedelta) -> str:

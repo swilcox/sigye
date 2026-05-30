@@ -1,13 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import date, datetime
 from pathlib import Path
+from typing import Annotated
 
-import click
-from click_aliases import ClickAliasedGroup
+import cappa
 
 from .config.settings import DEFAULT_CONFIG_PATH, Settings
 from .editors import EditorError
 from .models import EntryListFilter
-from .output import OutputFormatter, OutputType, create_output_formatter, validate_output_format
+from .output import OutputFormatter, OutputType, create_output_formatter
+from .output.output_utils import validate_output_format
 from .services import TimeTrackingService
 from .utils.datetime_utils import validate_time
 from .utils.translation import set_locale
@@ -20,171 +22,200 @@ def load_settings(config_file: Path | None = None) -> Settings:
     return settings
 
 
+def _parse_date(value: str) -> date:
+    return datetime.strptime(value, "%Y-%m-%d").date()
+
+
 @dataclass
 class ContextObject:
     tts: TimeTrackingService
     output: OutputFormatter
 
 
-pass_context_object = click.make_pass_decorator(ContextObject, ensure=True)
-
-
-@click.group(cls=ClickAliasedGroup)
-@click.version_option()
-@click.option(
-    "--config-file",
-    "-c",
-    type=click.Path(path_type=Path),
-    default=DEFAULT_CONFIG_PATH,
-    help="Path to config file",
-    show_default=True,
-)
-@click.option(
-    "--filename",
-    "-f",
-    type=click.Path(path_type=Path),
-    help="Path to data file",
-)
-@click.option(
-    "--output_format",
-    "-o",
-    type=click.Choice(OutputType.choices(), case_sensitive=False),
-    help="Output format",
-    callback=validate_output_format,
-)
-@click.pass_context
-def cli(ctx, config_file, filename, output_format: OutputType | None):
-    settings = load_settings(config_file)
-    settings.data_filename = filename or settings.data_filename
-    settings.output_format = output_format or settings.output_format
-    ctx.obj = ContextObject(
+def build_context(sigye: "Sigye") -> ContextObject:
+    settings = load_settings(sigye.config_file)
+    settings.data_filename = sigye.filename or settings.data_filename
+    settings.output_format = sigye.output_format or settings.output_format
+    return ContextObject(
         TimeTrackingService(settings),
-        create_output_formatter(settings.output_format, force=(bool(output_format))),
+        create_output_formatter(settings.output_format, force=bool(sigye.output_format)),
     )
 
 
-@cli.command("start")
-@click.argument("project", required=True, type=str)
-@click.argument("comment", required=False, type=str, default="")
-@click.option("--tag", required=False, type=str, multiple=True)
-@click.option(
-    "--start_time",
-    "-s",
-    required=False,
-    type=str,
-    help="Start time expressed as HH:MM or HH:MM:SS in 24-hour format or AM/PM",
-    default=None,
-    callback=validate_time,
-)
-@pass_context_object
-def start(context: ContextObject, project, comment, tag, start_time):
-    """start tracking work on a project"""
-    time_entry = context.tts.start_tracking(project, comment=comment, tags=set(tag), start_time=start_time)
-    context.output.single_entry_output(time_entry)
+Context = Annotated[ContextObject, cappa.Dep(build_context)]
 
 
-@cli.command("stop")
-@click.argument("comment", required=False, type=str, default="")
-@click.option(
-    "--stop_time",
-    "-s",
-    callback=validate_time,
-    required=False,
-    type=str,
-    default=None,
-    help="Stop/End time expressed as HH:MM or HH:MM:SS in 24-hour format or AM/PM",
-)
-@pass_context_object
-def stop(context: ContextObject, comment, stop_time):
-    """stop tracking work on a project"""
-    try:
-        if comment:
-            time_entry = context.tts.get_active_entry()
-            time_entry.comment = comment
-            time_entry = context.tts.update_entry(time_entry)
-        time_entry = context.tts.stop_tracking(stop_time=stop_time)
-    except ValueError as e:
-        raise click.ClickException(e) from e
-    context.output.single_entry_output(time_entry)
+@cappa.command(name="start", help="start tracking work on a project")
+@dataclass
+class Start:
+    project: str
+    comment: str = ""
+    tag: Annotated[list[str], cappa.Arg(long=True)] = field(default_factory=list)
+    start_time: Annotated[
+        datetime | None,
+        cappa.Arg(
+            short="-s",
+            long="--start_time",
+            parse=validate_time,
+            parse_inference=False,
+            help="Start time expressed as HH:MM or HH:MM:SS in 24-hour format or AM/PM",
+        ),
+    ] = None
+
+    def __call__(self, context: Context) -> None:
+        time_entry = context.tts.start_tracking(
+            self.project, comment=self.comment, tags=set(self.tag), start_time=self.start_time
+        )
+        context.output.single_entry_output(time_entry)
 
 
-@cli.command("status")
-@pass_context_object
-def status(context: ContextObject):
-    """displays currently tracked (if active)"""
-    time_entry = context.tts.get_active_entry()
-    context.output.single_entry_output(time_entry)
+@cappa.command(name="stop", help="stop tracking work on a project")
+@dataclass
+class Stop:
+    comment: str = ""
+    stop_time: Annotated[
+        datetime | None,
+        cappa.Arg(
+            short="-s",
+            long="--stop_time",
+            parse=validate_time,
+            parse_inference=False,
+            help="Stop/End time expressed as HH:MM or HH:MM:SS in 24-hour format or AM/PM",
+        ),
+    ] = None
+
+    def __call__(self, context: Context) -> None:
+        try:
+            if self.comment:
+                time_entry = context.tts.get_active_entry()
+                time_entry.comment = self.comment
+                time_entry = context.tts.update_entry(time_entry)
+            time_entry = context.tts.stop_tracking(stop_time=self.stop_time)
+        except ValueError as e:
+            raise cappa.Exit(str(e), code=1) from e
+        context.output.single_entry_output(time_entry)
 
 
-@cli.command("edit")
-@click.argument("id", required=True, type=str)
-@pass_context_object
-def edit_entry(context: ContextObject, id):
-    """edit a time entry using the system editor"""
-    try:
-        entry = context.tts.get_entry_by_partial_id(id)
-    except KeyError as e:
-        raise click.ClickException(f"No entry found with id {id}") from e
-    except IndexError as e:
-        raise click.ClickException(f"Multiple records found starting with id {id}") from e
-    try:
-        context.output.single_entry_output(context.tts.edit_entry(entry.id))
-    except EditorError as e:
-        raise click.ClickException(f"Error editing entry: {str(e)}") from e
+@cappa.command(name="status", help="displays currently tracked (if active)")
+@dataclass
+class Status:
+    def __call__(self, context: Context) -> None:
+        time_entry = context.tts.get_active_entry()
+        context.output.single_entry_output(time_entry)
 
 
-@cli.command("delete", aliases=["del", "rm"])
-@click.argument("id", required=True, type=str)
-@pass_context_object
-def delete_entry(context: ContextObject, id):
-    """delete a time entry"""
-    try:
-        entry = context.tts.get_entry_by_partial_id(id)  # Get the entry to delete
-    except KeyError as e:
-        raise click.ClickException(f"No entry found with id {id}") from e
-    except IndexError as e:
-        raise click.ClickException(f"Multiple records found starting with id {id}") from e
-    entry = context.tts.delete_entry(entry.id)
-    context.output.single_entry_output(entry)
+@cappa.command(name="edit", help="edit a time entry using the system editor")
+@dataclass
+class Edit:
+    id: str
+
+    def __call__(self, context: Context) -> None:
+        try:
+            entry = context.tts.get_entry_by_partial_id(self.id)
+        except KeyError as e:
+            raise cappa.Exit(f"No entry found with id {self.id}", code=1) from e
+        except IndexError as e:
+            raise cappa.Exit(f"Multiple records found starting with id {self.id}", code=1) from e
+        try:
+            context.output.single_entry_output(context.tts.edit_entry(entry.id))
+        except EditorError as e:
+            raise cappa.Exit(f"Error editing entry: {str(e)}", code=1) from e
 
 
-@cli.command("list", aliases=["ls"])
-@click.argument(
-    "time_period",
-    required=False,
-    type=click.Choice(["today", "yesterday", "week", "month", "all", ""]),
-    default="",
-)
-@click.option(
-    "--start_date",
-    type=click.DateTime(formats=["%Y-%m-%d"]),
-    help="Start date in format YYYY-MM-DD",
-)
-@click.option("--end_date", type=click.DateTime(formats=["%Y-%m-%d"]), help="End date in format YYYY-MM-DD")
-@click.option("--tag", multiple=True)
-@click.option("--project", multiple=True)
-@pass_context_object
-def list_entries(context: ContextObject, time_period, start_date, end_date, tag, project):
+@cappa.command(name="delete", aliases=["del", "rm"], help="delete a time entry")
+@dataclass
+class Delete:
+    id: str
+
+    def __call__(self, context: Context) -> None:
+        try:
+            entry = context.tts.get_entry_by_partial_id(self.id)
+        except KeyError as e:
+            raise cappa.Exit(f"No entry found with id {self.id}", code=1) from e
+        except IndexError as e:
+            raise cappa.Exit(f"Multiple records found starting with id {self.id}", code=1) from e
+        entry = context.tts.delete_entry(entry.id)
+        context.output.single_entry_output(entry)
+
+
+@cappa.command(name="list", aliases=["ls"], help="display list of time entries for a time period")
+@dataclass
+class List:
     """display list of time entries for a time period
 
     Default behavior (no time_period): shows today's entries, plus any active entry from a previous date.
     Use 'all' to display all time entries.
     """
-    filter = EntryListFilter(
-        time_period=time_period,
-        start_date=start_date,
-        end_date=end_date,
-        tags=set(tag),
-        projects=set(project),
-    )
-    time_list = context.tts.list_entries(filter=filter)
-    context.output.multiple_entries_output(time_list)
+
+    time_period: Annotated[str, cappa.Arg(choices=["today", "yesterday", "week", "month", "all", ""])] = ""
+    start_date: Annotated[
+        date | None,
+        cappa.Arg(
+            long="--start_date",
+            parse=_parse_date,
+            parse_inference=False,
+            help="Start date in format YYYY-MM-DD",
+        ),
+    ] = None
+    end_date: Annotated[
+        date | None,
+        cappa.Arg(
+            long="--end_date",
+            parse=_parse_date,
+            parse_inference=False,
+            help="End date in format YYYY-MM-DD",
+        ),
+    ] = None
+    tag: Annotated[list[str], cappa.Arg(long=True)] = field(default_factory=list)
+    project: Annotated[list[str], cappa.Arg(long=True)] = field(default_factory=list)
+
+    def __call__(self, context: Context) -> None:
+        filter = EntryListFilter(
+            time_period=self.time_period,
+            start_date=self.start_date,
+            end_date=self.end_date,
+            tags=set(self.tag),
+            projects=set(self.project),
+        )
+        time_list = context.tts.list_entries(filter=filter)
+        context.output.multiple_entries_output(time_list)
 
 
-@cli.command("export")
-@click.argument("export_filename", required=True, type=click.Path(path_type=Path))
-@pass_context_object
-def export(context: ContextObject, export_filename):
-    """export time entries to a file"""
-    records_exported = context.tts.export_entries(export_filename)
-    context.output.export_output(records_exported, export_filename)
+@cappa.command(name="export", help="export time entries to a file")
+@dataclass
+class Export:
+    export_filename: Path
+
+    def __call__(self, context: Context) -> None:
+        records_exported = context.tts.export_entries(self.export_filename)
+        context.output.export_output(records_exported, self.export_filename)
+
+
+@cappa.command(name="sigye")
+@dataclass
+class Sigye:
+    """A simple command-line program for tracking time."""
+
+    config_file: Annotated[
+        Path,
+        cappa.Arg(short="-c", long="--config-file", help="Path to config file"),
+    ] = DEFAULT_CONFIG_PATH
+    filename: Annotated[
+        Path | None,
+        cappa.Arg(short="-f", long="--filename", help="Path to data file"),
+    ] = None
+    output_format: Annotated[
+        OutputType | None,
+        cappa.Arg(
+            short="-o",
+            long="--output_format",
+            parse=validate_output_format,
+            parse_inference=False,
+            help="Output format",
+        ),
+    ] = None
+    cmd: cappa.Subcommands[Start | Stop | Status | Edit | Delete | List | Export] = None
+
+
+def cli(argv: list[str] | None = None) -> None:
+    cappa.invoke(Sigye, argv=argv)
