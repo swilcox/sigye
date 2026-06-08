@@ -1,13 +1,13 @@
 [project]
 name = "sigye"
-version = "0.11.0"
+version = "0.11.1"
 description = "(시계) A simple command-line program for tracking time."
 readme = "README.md"
 license = { text = "MIT License" }
 authors = [{ name = "swilcox", email = "steven@wilcox.be" }]
 requires-python = ">=3.12"
 dependencies = [
-    "cappa>=0.28",
+    "cappa>=0.32",
     "humanize>=4.11.0",
     "pydantic-settings>=2.6.1",
     "pydantic>=2.9.2",
@@ -53,5 +53,3 @@ select = [
 ]
 extend-fixable = ["E", "F", "UP", "B", "SIM", "I"]
 
-[tool.uv.sources]
-cappa = { git = "https://github.com/DanCardin/cappa.git", branch = "main" }
